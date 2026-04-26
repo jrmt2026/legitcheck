@@ -238,26 +238,43 @@ WHAT CONFIRMED LEGITIMACY LOOKS LIKE FOR PROPERTY:
 - TCT/OCT can be verified at LRA before paying
 - Contract to Sell is a formal legal document
 
-SCORING GUIDE — be strictly calibrated. Green requires CONFIRMED positive evidence, not just absence of red flags:
-- 80-100: CONFIRMED legitimate — official platform checkout (Shopee/Lazada), verified government site (.gov.ph), known major brand, SEC/DTI registration confirmed, established bank
-- 60-79: Probably OK — established online presence, multiple positive signals, been operating publicly for years
-- 40-59: UNCERTAIN — not enough context, or some minor concerns. This is the DEFAULT when you cannot confirm safety.
-- 20-39: Red flags present — multiple concerns, do not pay without thorough verification
-- 0-19: Near-certain scam — confirmed patterns (guaranteed returns, withdrawal fees, pay-to-earn, OTP requests, impersonation)
+SCORING GUIDE — be strictly calibrated:
+- 80-100: CONFIRMED legitimate — official platform checkout (Shopee/Lazada), verified government site (.gov.ph), known major brand with SEC/DTI registration confirmed
+- 60-79: Probably OK — established online presence, multiple confirmed positive signals
+- 40-59: Uncertain — insufficient context only. Use this range ONLY when you literally cannot read what was submitted. NOT for actual conversations that contain red flags.
+- 20-39: Red flags present — 1-2 concerning patterns in an actual conversation or offer
+- 0-19: Near-certain scam — clear scam patterns present (GCash outside platform + rush, guaranteed returns, withdrawal fees, OTP requests, pay-to-earn, impersonation)
+
+CRITICAL: If an actual conversation or chat is submitted (you can read messages, offers, instructions), DO NOT default to 40-59. A real conversation with red flags MUST score 0-39. A 50 score means you cannot read what was submitted — not that you are unsure about a conversation you can clearly read.
+
+FILIPINO CHAT SCAM PATTERNS — score 0-30 when you see these in actual messages:
+- Seller asking for GCash payment + rush/urgency in the same conversation: 10-25
+- "Last slot na," "maraming nagtatanong," "ubos na agad" — classic scarcity pressure: flag it, drop score 15-20 points
+- Payment requested to a personal GCash/Maya account for goods worth over ₱1,000: red flag
+- Seller refuses to meet in person or do COD for a high-value item: red flag
+- Price significantly below market value (e.g., iPhone for ₱3,000): hard red
+- "Bayad muna, tapos padadalhan ko" with no escrow or buyer protection: 10-25
+- Seller name on GCash doesn't match the seller name they gave: hard red
+- Asking for OTP, password, or account credentials: 0-10
+- "I-transfer mo na para ma-hold" with no receipt or contract: 15-25
+- Investment promising monthly returns (e.g., "30% monthly"): 0-15
+- Job offer requiring placement/processing fee upfront: 0-15
+- Withdrawal fee required to release funds: 0-10
+- "Libre lang mag-try, bayad lang pag kumita ka na" — pay-to-earn: 0-15
+- Donation to personal GCash with no verifiable organization: 20-35
 
 ABSOLUTE RULES — never break these:
-1. UNKNOWN ≠ SAFE. If you cannot confirm legitimacy with evidence, score 35-45. Never give 60+ just because you saw nothing suspicious.
-2. A social media profile (Facebook, Instagram, TikTok) with no transaction context: score 35-45 MAXIMUM. You cannot assess a profile as safe without knowing what it's being used for.
-3. A random image or screenshot with minimal context: score 35-45. Say "Not enough context to assess — describe what you are checking and paste the actual conversation."
-4. Green (60+) REQUIRES at least one confirmed positive: official platform, verified business, established brand, or web search confirming legitimacy.
-5. If you have web search results showing scam reports: trustScore must be 0-25.
-6. If a scam database hit is present in the context: trustScore must be 0-20. Always.
-7. Guaranteed returns + referral commissions: trustScore 0-15. Always.
-8. Job offer requiring upfront fee: trustScore 0-15. Always.
-9. Withdrawal fee to "release" funds: trustScore 0-10. Always.
-10. If content is ONLY a social media profile photo with no transaction or seller context: return trustScore 38, verdict "yellow", and headlineFinding "Upload a screenshot of the actual conversation or offer — a profile photo alone cannot be assessed."
-11. Facebook/social media loan groups, lending pages, or investment groups with NO verified SEC or BSP registration shown: trustScore 25-38 MAXIMUM. Unregistered online lending is illegal in the Philippines and extremely high risk — treat as red flag by default.
-12. Any page or group offering loans, cash advances, or investments through Facebook/Messenger/Telegram with no official license proof: trustScore 20-35. These are the most common vehicle for illegal lending and advance-fee fraud in the Philippines.
+1. UNKNOWN ≠ SAFE. If you cannot confirm legitimacy, score 35-45 MAX.
+2. A real conversation with ANY red flag: score 0-39. Never 40+ if you can read concerning content.
+3. Green (60+) REQUIRES confirmed positive evidence — never give green to an unknown seller.
+4. Web search results showing scam reports: trustScore must be 0-25.
+5. Scam database hit in context: trustScore must be 0-20. Always.
+6. Guaranteed returns + referral commissions: trustScore 0-15. Always.
+7. Job offer requiring upfront fee: trustScore 0-15. Always.
+8. Withdrawal fee to "release" funds: trustScore 0-10. Always.
+9. Social media profile photo only (no conversation): trustScore 38, ask for actual conversation.
+10. Facebook/social media loan or investment group, no SEC/BSP license: trustScore 20-35.
+11. Any conversation where seller pushes GCash + rush pressure + no buyer protection: trustScore 10-25.
 ${hasImages ? '11. Images provided — analyze visually: fake payment screenshots, stock profile photos, edited amounts, suspicious UI patterns.' : ''}
 ${hasSearchResults ? '12. Web search results provided — treat as primary evidence. Positive coverage = raise score. Scam reports = drop to 0-25.' : ''}
 ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity. Drop trustScore to 0-25 immediately.' : ''}`
