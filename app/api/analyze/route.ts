@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { detectSignals, computeRisk, detectCategory } from '@/lib/decisionEngine'
+import { detectSignals, computeRisk, detectCategory, SIGNALS } from '@/lib/decisionEngine'
 import type { RiskColor, CategoryId } from '@/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -188,6 +188,21 @@ export async function POST(req: Request) {
     searchContext,
   ].filter(Boolean).join('\n')
 
+  // ── 5b. Run keyword engine EARLY — inject findings into Claude's context ──────
+  const catIdEarly  = detectCategory(analysisText)
+  const sigIdsEarly = detectSignals(fullContext, catIdEarly)
+  if (!siteIsHttps && !sigIdsEarly.includes('no_https')) sigIdsEarly.push('no_https')
+  const kwEarly = computeRisk(catIdEarly, sigIdsEarly)
+
+  const detectedPatterns = sigIdsEarly
+    .map(id => SIGNALS[id])
+    .filter(Boolean)
+    .filter(s => s.severity !== 'positive')
+
+  const signalContext = detectedPatterns.length > 0
+    ? `\n\nPRE-SCAN ALERT — keyword engine already confirmed these patterns in the text:\n${detectedPatterns.map(s => `• ${s.en} (severity: ${s.severity})`).join('\n')}\nYou MUST factor these confirmed patterns into your score. They are not guesses — they are definite matches found in the submitted text.`
+    : ''
+
   // ── 6. Claude deep analysis — PRIMARY VERDICT ─────────────────────────────────
   let trustScore = 50   // neutral default if Claude fails
   let verdictColor: RiskColor = 'yellow'
@@ -288,7 +303,7 @@ ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity
       for (const img of imageContents) messageContent.push(img)
     }
 
-    messageContent.push({ type: 'text', text: `Analyze this for Philippine scam risk:\n\n${fullContext}` })
+    messageContent.push({ type: 'text', text: `Analyze this for Philippine scam risk:\n\n${fullContext}${signalContext}` })
 
     const aiResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -331,18 +346,28 @@ ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity
     return NextResponse.json({ result: { ...fallback, aiInsights: ['Analysis service temporarily unavailable. Result based on keyword detection only.'] }, extractedText: analysisText })
   }
 
-  // ── 7. Keyword engine sanity check — hard reds can override Claude ────────────
-  const catId  = detectCategory(analysisText)
-  const sigIds = detectSignals(fullContext, catId)
-  if (!siteIsHttps && !sigIds.includes('no_https')) sigIds.push('no_https')
+  // ── 7. Keyword engine override — keyword engine CAPS Claude, never the other way ─
+  // Reuse the early keyword run (already computed above as kwEarly)
+  const catId    = catIdEarly
+  const sigIds   = sigIdsEarly
+  const kwResult = kwEarly
 
-  const kwResult = computeRisk(catId, sigIds)
+  const isHardRed   = kwResult.isHardRed
+  const highSigCount = detectedPatterns.filter(s => s.severity === 'high' || s.severity === 'hard_red').length
 
-  // Hard red signals override Claude (e.g., Claude missed a withdrawal fee scam)
-  const isHardRed = kwResult.isHardRed
-  if (isHardRed && trustScore > 25) {
-    trustScore = Math.min(trustScore, 20)
+  // Tier 1: Any hard_red signal → cap at 15
+  if (isHardRed && trustScore > 15) {
+    trustScore   = Math.min(trustScore, 15)
     verdictColor = 'red'
+  }
+  // Tier 2: 2+ high-severity signals → cap at 28 (real conversation with multiple red flags)
+  else if (highSigCount >= 2 && trustScore > 28) {
+    trustScore   = Math.min(trustScore, 28)
+    verdictColor = 'red'
+  }
+  // Tier 3: 1 high-severity signal → cap at 42 (yellow, at least one concern)
+  else if (highSigCount >= 1 && trustScore > 42) {
+    trustScore   = Math.min(trustScore, 42)
   }
 
   // Sync color to score — green now requires 70+, not 60+

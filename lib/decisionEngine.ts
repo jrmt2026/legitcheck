@@ -10,6 +10,9 @@ export const SIGNALS: Record<string, Signal> = {
   specific_specs:       { id: 'specific_specs',        en: 'Seller confirmed specific specs',    tl: 'Specific na specs ang kinumpirma',        riskPoints: -10, severity: 'positive' },
   no_rush_pressure:     { id: 'no_rush_pressure',      en: 'No urgency or rush pressure',        tl: 'Walang urgency o rush pressure',          riskPoints: -10, severity: 'positive' }, // kept for scoring, not shown in reasons
   payment_outside:      { id: 'payment_outside',       en: 'Payment outside platform requested', tl: 'Bayad sa labas ng platform',              riskPoints: 35,  severity: 'high' },
+  bayad_muna:           { id: 'bayad_muna',             en: '"Pay first, I will send after" — no buyer protection', tl: 'Bayad muna bago padala — walang buyer protection', riskPoints: 40, severity: 'hard_red' },
+  no_meetup:            { id: 'no_meetup',              en: 'Refuses meetup or COD — delivery only', tl: 'Ayaw mag-meet o COD — delivery lang',   riskPoints: 20,  severity: 'high' },
+  below_market:         { id: 'below_market',           en: 'Price suspiciously far below market value', tl: 'Presyo masyadong mura — parang peke', riskPoints: 25, severity: 'high' },
   name_mismatch:        { id: 'name_mismatch',         en: 'Account name mismatch',              tl: 'Hindi tugma ang account name',            riskPoints: 28,  severity: 'high' },
   rush_payment:         { id: 'rush_payment',          en: 'Rush / urgency pressure',            tl: 'Rush o urgency pressure',                 riskPoints: 18,  severity: 'medium' },
   no_item_proof:        { id: 'no_item_proof',         en: 'No item or listing proof',           tl: 'Walang patunay ng produkto',              riskPoints: 20,  severity: 'medium' },
@@ -109,8 +112,8 @@ export const SIGNALS: Record<string, Signal> = {
 
 const CATEGORY_SIGNALS: Record<CategoryId, { signals: string[]; hardRedPairs: string[][] }> = {
   online_purchase: {
-    signals: ['payment_outside', 'name_mismatch', 'rush_payment', 'no_item_proof', 'new_profile', 'official_checkout', 'verified_page'],
-    hardRedPairs: [['payment_outside', 'name_mismatch']],
+    signals: ['payment_outside', 'name_mismatch', 'rush_payment', 'no_item_proof', 'new_profile', 'bayad_muna', 'no_meetup', 'below_market', 'official_checkout', 'verified_page'],
+    hardRedPairs: [['payment_outside', 'name_mismatch'], ['bayad_muna'], ['payment_outside', 'rush_payment']],
   },
   investment: {
     signals: ['guaranteed_return', 'referral_focus', 'pressure_now', 'withdrawal_fee', 'no_sec_license', 'fake_screenshots'],
@@ -383,11 +386,35 @@ export function detectSignals(text: string, categoryId: CategoryId): string[] {
   const checks: Array<[string, () => boolean]> = [
     // Online purchase
     ['official_checkout',    () => (lower.includes('shopee') || lower.includes('lazada')) && lower.includes('checkout')],
-    ['payment_outside',      () => (lower.includes('gcash') || lower.includes('maya') || lower.includes('bank')) && !lower.includes('checkout')],
-    ['name_mismatch',        () => lower.includes('mismatch') || lower.includes('hindi tugma') || lower.includes('ibang pangalan')],
-    ['rush_payment',         () => lower.includes('rush') || lower.includes('urgent') || lower.includes('now na') || lower.includes('ngayon na') || lower.includes('last slot')],
-    ['new_profile',          () => lower.includes('new account') || lower.includes('bagong account')],
-    // Investment
+    ['payment_outside',      () => (lower.includes('gcash') || lower.includes('maya') || lower.includes('bank transfer') || lower.includes('paleng')) && !lower.includes('checkout') && !(lower.includes('shopee') && lower.includes('checkout'))],
+    ['name_mismatch',        () => lower.includes('mismatch') || lower.includes('hindi tugma') || lower.includes('ibang pangalan') || lower.includes('iba ang name') || lower.includes('different name')],
+    ['rush_payment',         () =>
+      lower.includes('rush') || lower.includes('urgent') || lower.includes('now na') ||
+      lower.includes('ngayon na') || lower.includes('last slot') || lower.includes('bilisan') ||
+      lower.includes('dali na') || lower.includes('agad na') || lower.includes('ibebenta') ||
+      lower.includes('maraming nagtatanong') || lower.includes('ubos na') || lower.includes('huling slot') ||
+      lower.includes('last na') || lower.includes('may iba') && lower.includes('nagtatanong') ||
+      lower.includes('mabilis lang') || lower.includes('bilis') && lower.includes('bayad')],
+    ['new_profile',          () => lower.includes('new account') || lower.includes('bagong account') || lower.includes('new lang') || lower.includes('bago pa lang')],
+    ['no_item_proof',        () => lower.includes('wala pang') && (lower.includes('litrato') || lower.includes('picture') || lower.includes('photo')) || lower.includes('ipapakita') && lower.includes('pagkatapos')],
+      // Filipino chat-specific scam patterns
+    ['payment_outside',      () => (lower.includes('gcash') || lower.includes('maya') || lower.includes('bank')) && (lower.includes('account ko') || lower.includes('account number') || lower.includes('i-send mo') || lower.includes('padala mo') || lower.includes('transfer mo'))],
+    ['rush_payment',         () => lower.includes('may nagtatanong') || lower.includes('may pabili') || lower.includes('kukunin na') || lower.includes('kunin na ng iba') || lower.includes('ibebenta na sa iba')],
+    ['bayad_muna',           () =>
+      (lower.includes('bayad muna') || lower.includes('magbayad muna') || lower.includes('payment muna') ||
+       lower.includes('padala muna') || lower.includes('i-send muna') || lower.includes('i-transfer muna')) &&
+      (lower.includes('tapos') || lower.includes('saka') || lower.includes('after') || lower.includes('then') || lower.includes('pagkatapos'))],
+    ['no_meetup',            () =>
+      (lower.includes('hindi') || lower.includes('di') || lower.includes('ayaw') || lower.includes('hindi pwede') || lower.includes('di kaya')) &&
+      (lower.includes('meet') || lower.includes('personal') || lower.includes('cod') || lower.includes('cash on delivery') || lower.includes('face to face'))],
+    ['below_market',         () => {
+      if (/iphone\s*\d+/i.test(lower) && /[₱p][\s]?[1-9]\d{3}(?!\d)/i.test(lower)) return true
+      if (/samsung\s*(s\d|galaxy\s*s)/i.test(lower) && /[₱p][\s]?[1-9]\d{3}(?!\d)/i.test(lower)) return true
+      if ((lower.includes('mura') || lower.includes('cheap')) && (lower.includes('brand new') || lower.includes('original'))) return true
+      return false
+    }],
+
+  // Investment
     ['guaranteed_return',    () => lower.includes('guaranteed') || lower.includes('garantisado') || lower.includes('sure return')],
     ['referral_focus',       () => lower.includes('referral') || lower.includes('recruit') || lower.includes('komisyon') || lower.includes('commission')],
     ['withdrawal_fee',       () => lower.includes('withdrawal fee') || lower.includes('release fee') || lower.includes('unlock')],
