@@ -35,7 +35,7 @@ const CATEGORIES: { id: CategoryId; icon: string; label: string }[] = [
   { id: 'romance_scam',    icon: '💔',  label: 'Romance Scam' },
 ]
 
-const SCAN_STEPS = ['Reading content…', 'Scanning for red flags…', 'Computing risk score…', 'Generating report…']
+const SCAN_STEPS = ['Reading content…', 'Searching the web…', 'Scanning for red flags…', 'Computing risk score…', 'Generating report…']
 
 function fileToBase64(file: File): Promise<{ data: string; mimeType: string }> {
   return new Promise((resolve, reject) => {
@@ -104,35 +104,29 @@ export default function BuyerPage() {
     let finalResult: DecisionResult | null = null
     let analysisText = input
 
-    // Try AI analysis if images present
-    if (uploadedFiles.length > 0) {
-      try {
-        const imageFiles = uploadedFiles.filter(f => f.type.startsWith('image/'))
-        if (imageFiles.length > 0) {
-          const images = await Promise.all(imageFiles.map(fileToBase64))
-          const res = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: input, images }),
-          })
-          if (res.ok) {
-            const data = await res.json()
-            finalResult = data.result
-            analysisText = data.extractedText || input
-          }
-        }
-      } catch {
-        // fall through to local engine
+    try {
+      const imageFiles = uploadedFiles.filter(f => f.type.startsWith('image/'))
+      const images = imageFiles.length > 0 ? await Promise.all(imageFiles.map(fileToBase64)) : []
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: input, images }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        finalResult = data.result
+        analysisText = data.extractedText || input
       }
+    } catch {
+      // fall through to local engine
     }
 
-    // Local engine (primary for text, fallback for images)
     if (!finalResult) {
       try {
         const cat     = detectCategory(analysisText)
         const signals = detectSignals(analysisText, cat)
         finalResult   = computeRisk(cat, signals)
-      } catch (e) {
+      } catch {
         setError('Analysis failed. Please try again.')
         setStep('input')
         return
@@ -230,10 +224,16 @@ export default function BuyerPage() {
         <Link href="/dashboard" className="text-ink-3 hover:text-ink transition-colors">
           <ArrowLeft size={20} />
         </Link>
-        <div className="flex items-baseline gap-1">
+        <div className="flex items-baseline gap-1 flex-1">
           <span className="text-lg font-semibold text-ink">LegitCheck</span>
           <span className="text-lg font-light text-ink-2">PH</span>
         </div>
+        <Link
+          href="/sos"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red-light border border-brand-red/20 text-brand-red-dark text-sm font-medium hover:bg-brand-red hover:text-white transition-all"
+        >
+          🚨 Scam SOS
+        </Link>
       </header>
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
