@@ -215,84 +215,58 @@ export async function POST(req: Request) {
   const isWebsiteCheck = !!fetchedUrl
   const hasSearchResults = !!searchContext
 
-  const systemPrompt = `You are LegitCheck PH — the Philippines' premier AI fraud investigator. A Filipino user has submitted content to determine if it is a scam or legitimate.
+  const systemPrompt = `You are LegitCheck PH — the Philippines' premier AI fraud investigator. Your ONLY job is to READ what was submitted and LIST what you find. Do NOT assign a trust score — the scoring system handles that separately based on your findings.
 
-Your analysis must be DEFINITIVE, DIRECT, and based on EVIDENCE. Filipino users trust your verdict — they may lose real money if you are vague or wrong.
-
-Analyze everything provided and return ONLY this JSON (no markdown, no text outside JSON):
+Return ONLY this JSON (no markdown, no text outside JSON):
 {
-  "entitySummary": "One sentence describing exactly what was submitted — be specific (e.g., 'A Facebook seller named Juan Santos offering an iPhone 15 for ₱5,000, requesting GCash payment to 09171234567')",
-  "trustScore": 65,
-  "verdict": "yellow",
-  "headlineFinding": "The single most important conclusion in one direct sentence (e.g., 'This is a textbook advance fee scam — the withdrawal fee alone confirms it')",
-  "findings": [
-    "OBSERVATION: [exact thing found] — REASON: [why this is a red flag or concern, in plain language a Filipino can understand]",
-    "OBSERVATION: [next specific finding] — REASON: [plain explanation of the risk]"
+  "entitySummary": "One specific sentence: who/what was submitted, what they are offering, what payment they request, and any names/numbers mentioned. Be as specific as possible.",
+  "headlineFinding": "The single most important conclusion in one direct sentence. If it is a scam, say so directly. If unclear, say what is missing.",
+  "redFlags": [
+    {
+      "observation": "Exact thing you found — quote directly from the text where possible",
+      "reason": "Why this is a red flag in plain Filipino-English. Be specific about the risk.",
+      "severity": "critical"
+    }
   ],
   "positiveIndicators": [
-    "OBSERVATION: [specific confirmed positive] — REASON: [why this indicates legitimacy]. Only include if genuinely confirmed — never invent positives."
+    {
+      "observation": "Specific confirmed positive thing found",
+      "reason": "Why this indicates legitimacy"
+    }
   ],
-  "confidence": "high"
+  "canRead": true
 }
 
-FINDINGS ARE MANDATORY. You must ALWAYS return at least 1 finding — even for uncertain cases. If you cannot confirm it is a scam, still state specifically WHAT you see and WHY it does or does not raise concern. "Not enough context" is never an acceptable finding on its own — explain what context is missing and what that means. A finding like "OBSERVATION: Only a screenshot with no conversation or transaction details shown — REASON: Without seeing the actual offer or messages, we cannot assess the specific risk, but submitting unverified screenshots alone is not enough to clear anyone" is valid.
+SEVERITY LEVELS for redFlags:
+- "critical": Near-certain scam indicator (withdrawal fee, OTP request, pay-to-earn, guaranteed returns, GCash payment + urgency together, bayad muna with no escrow, advance fee for job/loan)
+- "high": Strong red flag (GCash to personal account for high-value item, refusal to meet/COD, price far below market, no buyer protection, unverifiable seller)
+- "medium": Concern worth noting (new account, no item proof, emotional pressure, vague seller details)
 
-PROPERTY / LOT TRANSACTION RULES — apply these when content involves real estate:
-- Reservation fee paid via GCash or personal account: trustScore 10-25 (hard red — legitimate developers never accept GCash reservations)
-- Price per sqm unrealistically cheap vs Philippine market rates: flag it
-- No mention of DHSUD/HLURB developer accreditation: flag it
-- Title not shown or seller cannot produce TCT/OCT: flag it
-- Seller is an individual (not a licensed broker or registered developer): flag it
-- Payment instructions go to a personal name rather than a company: hard red
-- "Reservation" required before you can see/verify documents: hard red
+SET canRead to FALSE only if the content is literally unreadable (blank image, unrecognizable file). If you can read ANY text or conversation, canRead must be TRUE and you must find at least one observation.
 
-WHAT CONFIRMED LEGITIMACY LOOKS LIKE FOR PROPERTY:
-- Developer is DHSUD-accredited (verifiable at dhsud.gov.ph)
-- Broker holds a valid PRC license
-- Payment goes to company escrow or bank account under developer name
-- TCT/OCT can be verified at LRA before paying
-- Contract to Sell is a formal legal document
+WHAT TO LOOK FOR — Filipino scam patterns:
+- "Bayad muna, tapos padadalhan ko" / pay first with no escrow = CRITICAL
+- GCash/Maya payment requested + urgency ("last slot," "may nagtatanong," "ibebenta na sa iba") = CRITICAL
+- Withdrawal fee / "bayad para ma-release ang pera" = CRITICAL
+- Guaranteed monthly returns ("30% monthly," "sure kita") = CRITICAL
+- Job offer requiring placement/processing fee = CRITICAL
+- OTP or password requested = CRITICAL
+- Seller refuses meetup or COD for items over ₱1,000 = HIGH
+- Price far below market (iPhone 15 for ₱3,000) = HIGH/CRITICAL
+- Payment to personal account for property/land = CRITICAL
+- Reservation required before seeing documents = CRITICAL
+- Unknown or unverified seller with no track record = MEDIUM
+- Facebook loan/investment group with no SEC/BSP license = HIGH
 
-SCORING GUIDE — be strictly calibrated:
-- 80-100: CONFIRMED legitimate — official platform checkout (Shopee/Lazada), verified government site (.gov.ph), known major brand with SEC/DTI registration confirmed
-- 60-79: Probably OK — established online presence, multiple confirmed positive signals
-- 40-59: Uncertain — insufficient context only. Use this range ONLY when you literally cannot read what was submitted. NOT for actual conversations that contain red flags.
-- 20-39: Red flags present — 1-2 concerning patterns in an actual conversation or offer
-- 0-19: Near-certain scam — clear scam patterns present (GCash outside platform + rush, guaranteed returns, withdrawal fees, OTP requests, pay-to-earn, impersonation)
+WHAT IS NOT A SCAM (do not flag these as red flags):
+- Official Shopee/Lazada checkout with order confirmation
+- Payment to verified business account matching company name
+- Government websites (.gov.ph)
+- Established brands with verifiable web presence
 
-CRITICAL: If an actual conversation or chat is submitted (you can read messages, offers, instructions), DO NOT default to 40-59. A real conversation with red flags MUST score 0-39. A 50 score means you cannot read what was submitted — not that you are unsure about a conversation you can clearly read.
-
-FILIPINO CHAT SCAM PATTERNS — score 0-30 when you see these in actual messages:
-- Seller asking for GCash payment + rush/urgency in the same conversation: 10-25
-- "Last slot na," "maraming nagtatanong," "ubos na agad" — classic scarcity pressure: flag it, drop score 15-20 points
-- Payment requested to a personal GCash/Maya account for goods worth over ₱1,000: red flag
-- Seller refuses to meet in person or do COD for a high-value item: red flag
-- Price significantly below market value (e.g., iPhone for ₱3,000): hard red
-- "Bayad muna, tapos padadalhan ko" with no escrow or buyer protection: 10-25
-- Seller name on GCash doesn't match the seller name they gave: hard red
-- Asking for OTP, password, or account credentials: 0-10
-- "I-transfer mo na para ma-hold" with no receipt or contract: 15-25
-- Investment promising monthly returns (e.g., "30% monthly"): 0-15
-- Job offer requiring placement/processing fee upfront: 0-15
-- Withdrawal fee required to release funds: 0-10
-- "Libre lang mag-try, bayad lang pag kumita ka na" — pay-to-earn: 0-15
-- Donation to personal GCash with no verifiable organization: 20-35
-
-ABSOLUTE RULES — never break these:
-1. UNKNOWN ≠ SAFE. If you cannot confirm legitimacy, score 35-45 MAX.
-2. A real conversation with ANY red flag: score 0-39. Never 40+ if you can read concerning content.
-3. Green (60+) REQUIRES confirmed positive evidence — never give green to an unknown seller.
-4. Web search results showing scam reports: trustScore must be 0-25.
-5. Scam database hit in context: trustScore must be 0-20. Always.
-6. Guaranteed returns + referral commissions: trustScore 0-15. Always.
-7. Job offer requiring upfront fee: trustScore 0-15. Always.
-8. Withdrawal fee to "release" funds: trustScore 0-10. Always.
-9. Social media profile photo only (no conversation): trustScore 38, ask for actual conversation.
-10. Facebook/social media loan or investment group, no SEC/BSP license: trustScore 20-35.
-11. Any conversation where seller pushes GCash + rush pressure + no buyer protection: trustScore 10-25.
-${hasImages ? '11. Images provided — analyze visually: fake payment screenshots, stock profile photos, edited amounts, suspicious UI patterns.' : ''}
-${hasSearchResults ? '12. Web search results provided — treat as primary evidence. Positive coverage = raise score. Scam reports = drop to 0-25.' : ''}
-${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity. Drop trustScore to 0-25 immediately.' : ''}`
+${hasImages ? 'Images are included — analyze them visually. Look for: edited amounts, fake payment screenshots (wrong fonts, cut-off details), stock profile photos, suspicious UI patterns.' : ''}
+${hasSearchResults ? 'Web search results are included — if they show scam reports or news articles about fraud, these are critical evidence. If they confirm legitimacy, note it as positive.' : ''}
+${scamDbContext ? 'SCAM DATABASE HIT — this entity has prior scam reports. This is critical evidence of a repeat scammer.' : ''}`
 
   try {
     // Build message content — include images if we have them for direct visual analysis
@@ -315,26 +289,54 @@ ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity
     const raw = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : '{}'
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
 
-    trustScore     = Math.max(0, Math.min(100, Number(parsed.trustScore) || 50))
-    verdictColor   = parsed.verdict === 'red' ? 'red' : parsed.verdict === 'green' ? 'green' : 'yellow'
-    entitySummary  = parsed.entitySummary || ''
-    aiInsights     = [
-      parsed.entitySummary,
-      parsed.headlineFinding,
-      ...(parsed.insights || []),
-    ].filter(Boolean).slice(0, 4)
+    entitySummary = parsed.entitySummary || ''
+    aiInsights    = [parsed.entitySummary, parsed.headlineFinding].filter(Boolean).slice(0, 2)
 
-    if (parsed.findings?.length) {
-      claudeFindings = parsed.findings.slice(0, 5).map((f: string) => ({
-        id: 'ai_detected', en: f, tl: f, riskPoints: 0, severity: 'high',
-      }))
+    // ── Compute trustScore FROM findings — not from Claude's score ──────────────
+    // Claude's job is to FIND things. Our job is to SCORE based on what was found.
+    const redFlagList: Array<{ observation: string; reason: string; severity: string }> = parsed.redFlags || []
+    const positiveList: Array<{ observation: string; reason: string }> = parsed.positiveIndicators || []
+    const canRead = parsed.canRead !== false  // default true
+
+    if (!canRead) {
+      // Content unreadable — truly uncertain
+      trustScore = 45
+    } else {
+      // Start at 70 (assume OK until proven otherwise)
+      // Each finding deducts based on severity
+      let score = 70
+      for (const flag of redFlagList) {
+        if (flag.severity === 'critical') score -= 38
+        else if (flag.severity === 'high')     score -= 22
+        else                                   score -= 10
+      }
+      for (const _ of positiveList) score += 12
+
+      // Bonus deductions from context
+      if (scamDbContext)    score -= 50  // confirmed scammer in DB
+      if (searchContext && searchContext.toLowerCase().includes('scam')) score -= 25
+
+      trustScore = Math.max(0, Math.min(100, score))
     }
 
-    if (parsed.positiveIndicators?.length) {
-      positiveIndicators = parsed.positiveIndicators.slice(0, 2).map((p: string) => ({
-        id: 'ai_positive', en: p, tl: p, riskPoints: 0, severity: 'positive',
-      }))
-    }
+    verdictColor = trustScore < 35 ? 'red' : trustScore < 70 ? 'yellow' : 'green'
+
+    // Convert to signal-like objects for display
+    claudeFindings = redFlagList.slice(0, 6).map((f, i) => ({
+      id: `ai_flag_${i}`,
+      en: `OBSERVATION: ${f.observation} — REASON: ${f.reason}`,
+      tl: `OBSERVATION: ${f.observation} — REASON: ${f.reason}`,
+      riskPoints: 0,
+      severity: f.severity === 'critical' ? 'hard_red' : f.severity === 'high' ? 'high' : 'medium',
+    }))
+
+    positiveIndicators = positiveList.slice(0, 3).map((p, i) => ({
+      id: `ai_pos_${i}`,
+      en: `OBSERVATION: ${p.observation} — REASON: ${p.reason}`,
+      tl: `OBSERVATION: ${p.observation} — REASON: ${p.reason}`,
+      riskPoints: 0,
+      severity: 'positive' as any,
+    }))
   } catch (e) {
     console.error('Claude analysis error:', e)
     // Fallback: keyword engine primary
@@ -346,34 +348,22 @@ ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity
     return NextResponse.json({ result: { ...fallback, aiInsights: ['Analysis service temporarily unavailable. Result based on keyword detection only.'] }, extractedText: analysisText })
   }
 
-  // ── 7. Keyword engine override — keyword engine CAPS Claude, never the other way ─
-  // Reuse the early keyword run (already computed above as kwEarly)
+  // ── 7. Keyword engine — supplements Claude, catches what Claude missed ──────────
   const catId    = catIdEarly
   const sigIds   = sigIdsEarly
   const kwResult = kwEarly
+  const isHardRed = kwResult.isHardRed
 
-  const isHardRed   = kwResult.isHardRed
-  const highSigCount = detectedPatterns.filter(s => s.severity === 'high' || s.severity === 'hard_red').length
-
-  // Tier 1: Any hard_red signal → cap at 15
+  // If keyword engine found hard reds that Claude missed, apply them too
   if (isHardRed && trustScore > 15) {
     trustScore   = Math.min(trustScore, 15)
     verdictColor = 'red'
   }
-  // Tier 2: 2+ high-severity signals → cap at 28 (real conversation with multiple red flags)
-  else if (highSigCount >= 2 && trustScore > 28) {
-    trustScore   = Math.min(trustScore, 28)
-    verdictColor = 'red'
-  }
-  // Tier 3: 1 high-severity signal → cap at 42 (yellow, at least one concern)
-  else if (highSigCount >= 1 && trustScore > 42) {
-    trustScore   = Math.min(trustScore, 42)
-  }
 
-  // Sync color to score — green now requires 70+, not 60+
-  if (trustScore < 35)              verdictColor = 'red'
-  else if (trustScore < 70)         verdictColor = 'yellow'
-  else                              verdictColor = 'green'
+  // Sync color from final score
+  if (trustScore < 35)      verdictColor = 'red'
+  else if (trustScore < 70) verdictColor = 'yellow'
+  else                      verdictColor = 'green'
 
   // ── 8. Build final result ─────────────────────────────────────────────────────
   // Use keyword engine's full result structure but override score/color/reasons
