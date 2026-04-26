@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Copy, Check, MessageCircle, ExternalLink, AlertTriangle, CheckCircle2, Search, Flag } from 'lucide-react'
+import { ArrowLeft, Copy, Check, MessageCircle, ExternalLink, AlertTriangle, CheckCircle2, Search, Flag, TrendingDown, TrendingUp, Minus, ShieldCheck } from 'lucide-react'
 import type { DecisionResult } from '@/types'
 import toast from 'react-hot-toast'
 import ShareButton from './ShareButton'
@@ -12,6 +12,7 @@ interface Props {
   result: DecisionResult
   checkId?: string
   inputText?: string
+  scoreSteps?: Array<{ label: string; delta: number }>
 }
 
 const VERDICT_STYLES = {
@@ -44,7 +45,7 @@ function parseFinding(text: string): { observation: string; reason: string } | n
   return { observation: obs, reason }
 }
 
-export default function ResultClient({ result, checkId, inputText = '' }: Props) {
+export default function ResultClient({ result, checkId, inputText = '', scoreSteps = [] }: Props) {
   const [lang, setLang] = useState<'en' | 'tl'>('en')
   const [copied, setCopied] = useState(false)
   const [checkedEvidence, setCheckedEvidence] = useState<Set<number>>(new Set())
@@ -55,9 +56,10 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
   const trustScore = 100 - result.score
   const detectedPhones = extractPhones(inputText)
 
-  // aiInsights[0] = entitySummary, aiInsights[1] = headlineFinding
-  const entitySummary   = result.aiInsights?.[0] || ''
-  const headlineFinding = result.aiInsights?.[1] || ''
+  // aiInsights[0] = entitySummary, aiInsights[1] = headlineFinding, aiInsights[2] = officialResource
+  const entitySummary    = result.aiInsights?.[0] || ''
+  const headlineFinding  = result.aiInsights?.[1] || ''
+  const officialResource = result.aiInsights?.[2] || ''
 
   // Split reasons into red flags vs positive indicators
   const redFlags   = result.reasons.filter(r => r.severity !== 'positive')
@@ -169,7 +171,7 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
 
             <div className="px-4 py-4 space-y-4">
               <div className="sec-label">
-                {lang === 'tl' ? `Bakit namin sincore ito ng ${trustScore}/100` : `Why we scored this ${trustScore}/100`}
+                {lang === 'tl' ? `Bakit ${trustScore}/100 ang marka nito` : `Why we scored this ${trustScore}/100`}
               </div>
 
               {/* What we analyzed */}
@@ -195,9 +197,64 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
                       : 'bg-brand-yellow-light border-brand-yellow/20'
                 }`}>
                   <p className={`text-[11px] font-semibold uppercase tracking-wider mb-1 ${v.text} opacity-70`}>
-                    {lang === 'tl' ? 'Pangunahing Konklusyon' : 'Main Conclusion'}
+                    {lang === 'tl' ? 'Pangunahing Natuklasan' : 'Main Conclusion'}
                   </p>
                   <p className={`text-sm font-medium leading-snug ${v.text}`}>{headlineFinding}</p>
+                </div>
+              )}
+
+              {/* Official resource — how to verify legitimately */}
+              {officialResource && (
+                <div className="flex gap-2.5 items-start bg-paper-2 border border-line rounded-xl px-3.5 py-3">
+                  <ShieldCheck size={14} className="text-ink-3 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 mb-0.5">
+                      {lang === 'tl' ? 'Paano mag-verify nang ligtas' : 'How to verify officially'}
+                    </p>
+                    <p className="text-sm text-ink-2 leading-snug">{officialResource}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Score breakdown — shown before detailed flags so users see the math first */}
+              {scoreSteps.length > 1 && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3">
+                    {lang === 'tl' ? 'Paano namin nakuha ang markang ito' : 'How we arrived at this score'}
+                  </p>
+                  <div className="rounded-xl border border-line overflow-hidden">
+                    {(() => {
+                      let running = 70
+                      return scoreSteps.map((step, i) => {
+                        running = i === 0 ? 70 : Math.max(0, Math.min(100, running + step.delta))
+                        const isStart = i === 0
+                        const isDeduction = step.delta < 0
+                        const isBonus = step.delta > 0
+                        return (
+                          <div key={i} className={`flex items-center gap-3 px-3 py-2.5 text-xs border-b border-line last:border-0 ${
+                            isStart ? 'bg-paper-2' : isDeduction ? 'bg-brand-red-light/40' : isBonus ? 'bg-brand-green-light/40' : 'bg-paper-2'
+                          }`}>
+                            <div className="flex-shrink-0">
+                              {isStart ? <Minus size={11} className="text-ink-3" /> :
+                               isDeduction ? <TrendingDown size={11} className="text-brand-red-dark" /> :
+                               <TrendingUp size={11} className="text-brand-green-dark" />}
+                            </div>
+                            <div className="flex-1 text-ink-2 leading-snug">{step.label}</div>
+                            <div className={`font-mono font-semibold flex-shrink-0 ${
+                              isStart ? 'text-ink-3' : isDeduction ? 'text-brand-red-dark' : 'text-brand-green-dark'
+                            }`}>
+                              {isStart ? `${running}` : `${step.delta > 0 ? '+' : ''}${step.delta} → ${running}`}
+                            </div>
+                          </div>
+                        )
+                      })
+                    })()}
+                  </div>
+                  <p className="text-[10px] text-ink-3 italic">
+                    {lang === 'tl'
+                      ? 'Simula sa 70 (neutral). Bawat red flag ay nagbabawas ng puntos; bawat positibong senyales ay nagdadagdag.'
+                      : 'Starts at 70 (neutral). Each red flag deducts points; each positive signal adds points.'}
+                  </p>
                 </div>
               )}
 
@@ -206,7 +263,7 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
                 <div className="space-y-2.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1.5">
                     <AlertTriangle size={11} className="text-brand-red opacity-80" />
-                    {lang === 'tl' ? 'Mga Nakitang Red Flag' : 'Red Flags Found'}
+                    {lang === 'tl' ? 'Mga Nakitang Babala' : 'Red Flags Found'}
                   </p>
                   {redFlags.map((r, i) => {
                     const parsed = parseFinding(L(r))
@@ -231,7 +288,7 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
                 <div className="space-y-2.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1.5">
                     <CheckCircle2 size={11} className="text-brand-green opacity-80" />
-                    {lang === 'tl' ? 'Mga Positibong Senyales' : 'Positive Signals'}
+                    {lang === 'tl' ? 'Mga Positibong Tanda' : 'Positive Signals'}
                   </p>
                   {positives.map((r, i) => {
                     const parsed = parseFinding(L(r))

@@ -210,63 +210,139 @@ export async function POST(req: Request) {
   let entitySummary = ''
   let claudeFindings: Array<{ en: string; tl: string; riskPoints: number; severity: any; id: string }> = []
   let positiveIndicators: Array<{ en: string; tl: string; riskPoints: number; severity: any; id: string }> = []
+  let scoreSteps: Array<{ label: string; delta: number }> = []
 
   const hasImages = imageContents.length > 0
   const isWebsiteCheck = !!fetchedUrl
   const hasSearchResults = !!searchContext
 
-  const systemPrompt = `You are LegitCheck PH — the Philippines' premier AI fraud investigator. Your ONLY job is to READ what was submitted and LIST what you find. Do NOT assign a trust score — the scoring system handles that separately based on your findings.
+  const systemPrompt = `You are LegitCheck PH — the Philippines' most trusted AI fraud investigator. You have comprehensive knowledge of Philippine scam patterns, official government domains, legitimate business practices, and how fraudsters operate.
+
+Your job: Read what was submitted, apply your knowledge, identify the scam type (if any), and explain your reasoning clearly so a non-expert understands exactly what is happening and what to do.
 
 Return ONLY this JSON (no markdown, no text outside JSON):
 {
-  "entitySummary": "One specific sentence: who/what was submitted, what they are offering, what payment they request, and any names/numbers mentioned. Be as specific as possible.",
-  "headlineFinding": "The single most important conclusion in one direct sentence. If it is a scam, say so directly. If unclear, say what is missing.",
+  "entitySummary": "One specific sentence: what was submitted, what it claims to be, what it is asking the recipient to do, and any names/numbers/links mentioned.",
+  "headlineFinding": "A decisive 1-2 sentence verdict. If it IS a scam: name the scam type and say so directly (e.g. 'This is a smishing scam — the text impersonates MMDA but the link lto.sssg.mx is not an official Philippine government domain.'). If LEGITIMATE: explain what makes it trustworthy. Never hedge when evidence is clear.",
+  "officialResource": "If this involves a government agency, bank, or verifiable institution, state the correct official way to verify: exact official URL or hotline (e.g. 'To check LTO violations yourself: portal.lto.gov.ph — never use links from SMS.'). Leave empty string if not applicable.",
   "redFlags": [
     {
-      "observation": "Exact thing you found — quote directly from the text where possible",
-      "reason": "Why this is a red flag in plain Filipino-English. Be specific about the risk.",
-      "severity": "critical"
+      "observation": "Quote the specific text or element that is suspicious — be precise (e.g. 'Link domain is lto.sssg.mx — .mx is Mexico, not a Philippine government domain')",
+      "reason": "2-3 sentences: (1) exactly what is wrong and why it proves fraud, (2) how this specific scam technique works to steal money or data, (3) what the victim risks if they comply. Explain as if to someone who has never seen this scam.",
+      "severity": "critical|high|medium"
     }
   ],
   "positiveIndicators": [
     {
-      "observation": "Specific confirmed positive thing found",
-      "reason": "Why this indicates legitimacy"
+      "observation": "Specific confirmed positive element — quote from the content",
+      "reason": "2 sentences: why this indicates legitimacy and what protection it provides."
     }
   ],
   "canRead": true
 }
 
-SEVERITY LEVELS for redFlags:
-- "critical": Near-certain scam indicator (withdrawal fee, OTP request, pay-to-earn, guaranteed returns, GCash payment + urgency together, bayad muna with no escrow, advance fee for job/loan)
-- "high": Strong red flag (GCash to personal account for high-value item, refusal to meet/COD, price far below market, no buyer protection, unverifiable seller)
-- "medium": Concern worth noting (new account, no item proof, emotional pressure, vague seller details)
+══════════════════════════════════════════════
+OFFICIAL PHILIPPINE GOVERNMENT DOMAINS
+(Any URL claiming to be these agencies but NOT on .gov.ph is DEFINITIVELY FAKE)
+══════════════════════════════════════════════
+LTO (Land Transportation Office): portal.lto.gov.ph, lto.gov.ph
+MMDA: mmda.gov.ph — MMDA does NOT send payment SMS with links
+BIR: bir.gov.ph, efps.bir.gov.ph
+SSS: my.sss.gov.ph, sss.gov.ph
+PhilHealth: philhealth.gov.ph
+Pag-IBIG / HDMF: pagibigfund.gov.ph
+COMELEC: comelec.gov.ph
+DFA (passport): dfa.gov.ph
+DOLE: dole.gov.ph
+POEA/DMW: dmw.gov.ph, poea.gov.ph
+NBI: nbi.gov.ph
+PNP: pnp.gov.ph
+SEC: sec.gov.ph
+BSP: bsp.gov.ph
+Banks: bdo.com.ph, bpi.com.ph, metrobank.com.ph, unionbankph.com, rcbc.com, pnb.com.ph
+GCash: gcash.com — never contacts you about account issues via SMS with links
+Maya: maya.ph — official app only, not via SMS payment links
 
-SET canRead to FALSE only if the content is literally unreadable (blank image, unrecognizable file). If you can read ANY text or conversation, canRead must be TRUE and you must find at least one observation.
+══════════════════════════════════════════════
+PHILIPPINE SCAM TAXONOMY — KNOW THESE PATTERNS
+══════════════════════════════════════════════
 
-WHAT TO LOOK FOR — Filipino scam patterns:
-- "Bayad muna, tapos padadalhan ko" / pay first with no escrow = CRITICAL
-- GCash/Maya payment requested + urgency ("last slot," "may nagtatanong," "ibebenta na sa iba") = CRITICAL
-- Withdrawal fee / "bayad para ma-release ang pera" = CRITICAL
-- Guaranteed monthly returns ("30% monthly," "sure kita") = CRITICAL
-- Job offer requiring placement/processing fee = CRITICAL
-- OTP or password requested = CRITICAL
-- Seller refuses meetup or COD for items over ₱1,000 = HIGH
-- Price far below market (iPhone 15 for ₱3,000) = HIGH/CRITICAL
-- Payment to personal account for property/land = CRITICAL
-- Reservation required before seeing documents = CRITICAL
-- Unknown or unverified seller with no track record = MEDIUM
-- Facebook loan/investment group with no SEC/BSP license = HIGH
+1. SMISHING / GOVERNMENT IMPERSONATION (SMS phishing)
+   Pattern: Text claims to be MMDA, LTO, BIR, SSS, PhilHealth, or any gov't agency with a link NOT on .gov.ph
+   Urgency: "past due," "penalty," "failure to pay will result in," "warrant of arrest," "license suspended"
+   Tell: Domain is .mx, .xyz, .top, .tk, .site, .info, .cc, or any non-.gov.ph TLD
+   Verdict: CRITICAL — government agencies in PH never send payment links via SMS
 
-WHAT IS NOT A SCAM (do not flag these as red flags):
-- Official Shopee/Lazada checkout with order confirmation
-- Payment to verified business account matching company name
-- Government websites (.gov.ph)
-- Established brands with verifiable web presence
+2. BAYAD MUNA SCAM (Facebook Marketplace / OLX)
+   Pattern: GCash payment first, seller will deliver later — no escrow, no buyer protection
+   Filipino markers: "bayad muna," "padala muna," "i-gcash mo muna," "para masigurado"
+   Verdict: CRITICAL — once GCash sent, seller disappears
 
-${hasImages ? 'Images are included — analyze them visually. Look for: edited amounts, fake payment screenshots (wrong fonts, cut-off details), stock profile photos, suspicious UI patterns.' : ''}
-${hasSearchResults ? 'Web search results are included — if they show scam reports or news articles about fraud, these are critical evidence. If they confirm legitimacy, note it as positive.' : ''}
-${scamDbContext ? 'SCAM DATABASE HIT — this entity has prior scam reports. This is critical evidence of a repeat scammer.' : ''}`
+3. INVESTMENT / PONZI SCAM
+   Pattern: Guaranteed monthly returns (10-30%+), recruit friends for commission, "last slots"
+   Filipino markers: "guaranteed return," "sure kita," "kumita na ang investors ko," "mag-invite ng friends"
+   Verdict: CRITICAL — no legitimate investment guarantees returns; this is illegal and regulated by SEC
+
+4. WITHDRAWAL FEE SCAM
+   Pattern: "You have earned ₱50,000 — pay ₱2,000 withdrawal fee to release funds"
+   Verdict: CRITICAL — no legitimate platform charges you to withdraw your own money
+
+5. JOB PLACEMENT FEE SCAM
+   Pattern: Job offer (often overseas/Dubai) requiring placement/processing fee before contract signing
+   Tell: POEA-licensed agencies are PROHIBITED from collecting placement fees upfront (for most destinations)
+   Verdict: CRITICAL — report to DMW/POEA; verify agency license at dmw.gov.ph
+
+6. PROPERTY / LAND TITLE SCAM
+   Pattern: Deposit required before seeing title; personal GCash/bank account for property payment; seller not on title
+   Tell: Legitimate transactions go through a broker licensed by PRC, title verified at LRA/Registry of Deeds
+   Signs of legitimacy: TCT/OCT number you can verify, licensed broker (PRC license), DHSUD-accredited developer
+   Verdict: CRITICAL if deposit demanded before documents shown
+
+7. LOAN ADVANCE FEE SCAM
+   Pattern: Loan approved — pay processing/insurance fee first to release funds
+   Tell: Legitimate lenders (SEC-registered) deduct fees from loan, never collect upfront
+   Verdict: CRITICAL — verify lender at sec.gov.ph
+
+8. OTP / PHISHING
+   Pattern: Any message asking for your one-time pin, password, or account verification code
+   Verdict: CRITICAL — banks, GCash, and Maya never ask for your OTP; this steals your account
+
+9. PRIZE / RAFFLE SCAM
+   Pattern: "You won ₱50,000 / iPhone / car — pay ₱500 shipping/tax to claim"
+   Verdict: CRITICAL — you cannot win what you did not enter; payment to claim = scam
+
+10. ROMANCE SCAM
+    Pattern: Online relationship (often foreign military/doctor), eventual money request for emergency/travel
+    Tell: Never met in person, video calls always fail, consistent excuses, sudden financial need
+    Verdict: CRITICAL if money requested
+
+11. FAKE LAND TITLE DOCUMENT
+    Pattern: Title looks official but has errors (wrong format, misspelled agencies, wrong seal)
+    Legitimate check: TCT/OCT must be verifiable at the Registry of Deeds (LRA) in the province where the land is
+    Tell: Real titles have micro-printing, security paper, official LRA seals
+
+12. DONATION SCAM
+    Pattern: Disaster relief appeal to personal GCash with no organizational affiliation, emotional pressure
+    Verdict: HIGH — verify through official channels (DSWD, Red Cross PH website)
+
+══════════════════════════════════════════════
+SEVERITY RULES
+══════════════════════════════════════════════
+- "critical": Pattern definitively matches a known fraud type with near-zero false positive rate
+- "high": Strong indicator requiring verification before proceeding
+- "medium": Concern worth noting — alone doesn't confirm fraud
+
+SET canRead to FALSE ONLY if the content is literally blank or unrecognizable. If ANY text is readable, canRead must be TRUE and you MUST analyze it.
+
+DO NOT FLAG AS RED FLAGS:
+- Official Shopee/Lazada/Lazada checkout (order confirmed in-app)
+- Payment to verified business account matching company name exactly
+- Any .gov.ph URL (these are official)
+- Established Philippine banks' own websites
+
+${hasImages ? 'IMAGES ATTACHED — analyze visually: check for edited amounts, fake payment screenshots (wrong fonts, cut-off bank logos, impossible balances), stock profile photos used as seller photo, suspicious document formatting.' : ''}
+${hasSearchResults ? 'WEB SEARCH RESULTS ATTACHED — if results show news articles, scam reports, or warnings about this entity/link/number, treat this as strong corroborating evidence. If results confirm legitimacy (official news, gov announcements), note as positive.' : ''}
+${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as a scammer by previous LegitCheck users. This is critical corroborating evidence.' : ''}`
 
   try {
     // Build message content — include images if we have them for direct visual analysis
@@ -290,7 +366,8 @@ ${scamDbContext ? 'SCAM DATABASE HIT — this entity has prior scam reports. Thi
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
 
     entitySummary = parsed.entitySummary || ''
-    aiInsights    = [parsed.entitySummary, parsed.headlineFinding].filter(Boolean).slice(0, 2)
+    const officialResource: string = parsed.officialResource || ''
+    aiInsights    = [parsed.entitySummary, parsed.headlineFinding, officialResource].filter(Boolean).slice(0, 3)
 
     // ── Compute trustScore FROM findings — not from Claude's score ──────────────
     // Claude's job is to FIND things. Our job is to SCORE based on what was found.
@@ -298,23 +375,39 @@ ${scamDbContext ? 'SCAM DATABASE HIT — this entity has prior scam reports. Thi
     const positiveList: Array<{ observation: string; reason: string }> = parsed.positiveIndicators || []
     const canRead = parsed.canRead !== false  // default true
 
-    if (!canRead) {
-      // Content unreadable — truly uncertain
-      trustScore = 45
-    } else {
-      // Start at 70 (assume OK until proven otherwise)
-      // Each finding deducts based on severity
-      let score = 70
-      for (const flag of redFlagList) {
-        if (flag.severity === 'critical') score -= 38
-        else if (flag.severity === 'high')     score -= 22
-        else                                   score -= 10
-      }
-      for (const _ of positiveList) score += 12
+    scoreSteps = []
 
-      // Bonus deductions from context
-      if (scamDbContext)    score -= 50  // confirmed scammer in DB
-      if (searchContext && searchContext.toLowerCase().includes('scam')) score -= 25
+    if (!canRead) {
+      trustScore = 45
+      scoreSteps.push({ label: 'Content could not be read', delta: -25 })
+    } else {
+      let score = 70
+      scoreSteps.push({ label: 'Starting point (neutral — must earn trust)', delta: 0 })
+
+      for (const flag of redFlagList) {
+        const delta = flag.severity === 'critical' ? -38 : flag.severity === 'high' ? -22 : -10
+        const label = flag.severity === 'critical'
+          ? `Critical red flag: ${flag.observation.slice(0, 60)}${flag.observation.length > 60 ? '…' : ''}`
+          : flag.severity === 'high'
+            ? `High-risk signal: ${flag.observation.slice(0, 60)}${flag.observation.length > 60 ? '…' : ''}`
+            : `Concern: ${flag.observation.slice(0, 60)}${flag.observation.length > 60 ? '…' : ''}`
+        score += delta
+        scoreSteps.push({ label, delta })
+      }
+
+      for (const pos of positiveList) {
+        score += 12
+        scoreSteps.push({ label: `Positive: ${pos.observation.slice(0, 60)}${pos.observation.length > 60 ? '…' : ''}`, delta: 12 })
+      }
+
+      if (scamDbContext) {
+        score -= 50
+        scoreSteps.push({ label: 'Confirmed in scam database', delta: -50 })
+      }
+      if (searchContext && searchContext.toLowerCase().includes('scam')) {
+        score -= 25
+        scoreSteps.push({ label: 'Web search found scam reports', delta: -25 })
+      }
 
       trustScore = Math.max(0, Math.min(100, score))
     }
@@ -437,5 +530,5 @@ ${scamDbContext ? 'SCAM DATABASE HIT — this entity has prior scam reports. Thi
 
   finalResult.aiInsights = aiInsights
 
-  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, searchPerformed: !!searchContext })
+  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [] })
 }

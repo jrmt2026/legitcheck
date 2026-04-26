@@ -60,6 +60,7 @@ export default function BuyerPage() {
   const [uploadedPreviews, setUploadedPreviews] = useState<string[]>([])
   const [scanStep, setScanStep]       = useState(0)
   const [result, setResult]           = useState<DecisionResult | null>(null)
+  const [scoreSteps, setScoreSteps]   = useState<Array<{ label: string; delta: number }>>([])
   const [savedCheckId, setSavedCheckId] = useState<string | undefined>()
   const [error, setError]             = useState('')
 
@@ -85,6 +86,7 @@ export default function BuyerPage() {
     setUploadedPreviews([])
     setScanStep(0)
     setResult(null)
+    setScoreSteps([])
     setSavedCheckId(undefined)
     setError('')
   }
@@ -116,6 +118,7 @@ export default function BuyerPage() {
         const data = await res.json()
         finalResult = data.result
         analysisText = data.extractedText || input
+        if (data.scoreSteps) setScoreSteps(data.scoreSteps)
       }
     } catch {
       // fall through to local engine
@@ -178,7 +181,7 @@ export default function BuyerPage() {
             New check
           </button>
         </header>
-        <ResultClient result={result} checkId={savedCheckId} inputText={input} />
+        <ResultClient result={result} checkId={savedCheckId} inputText={input} scoreSteps={scoreSteps} />
       </div>
     )
   }

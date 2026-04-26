@@ -79,12 +79,15 @@ export const SIGNALS: Record<string, Signal> = {
   no_sec_dti_reg:       { id: 'no_sec_dti_reg',        en: 'No SEC/DTI registration found',      tl: 'Walang nahanap na SEC/DTI registration',  riskPoints: 25,  severity: 'high' },
 
   // SMS / Text Scam
-  link_in_sms:          { id: 'link_in_sms',           en: 'Suspicious link sent via SMS',       tl: 'May link sa SMS',                         riskPoints: 30,  severity: 'high' },
-  unknown_sender:       { id: 'unknown_sender',        en: 'Unknown sender number',              tl: 'Di kilalang numero',                      riskPoints: 15,  severity: 'medium' },
+  link_in_sms:          { id: 'link_in_sms',           en: 'Suspicious link sent via SMS',       tl: 'May kahina-hinalang link sa mensahe',      riskPoints: 30,  severity: 'high' },
+  unknown_sender:       { id: 'unknown_sender',        en: 'Unknown sender number',              tl: 'Hindi kilalang nagpadala',                riskPoints: 15,  severity: 'medium' },
   bank_impersonation:   { id: 'bank_impersonation',    en: 'Pretends to be a bank or GCash',     tl: 'Nagpapanggap na bangko o GCash',          riskPoints: 40,  severity: 'hard_red' },
+  gov_impersonation:    { id: 'gov_impersonation',     en: 'Impersonates a government agency (MMDA, LTO, BIR, SSS, etc.)', tl: 'Nagpapanggap na ahensya ng gobyerno (MMDA, LTO, BIR, SSS, atbp.)', riskPoints: 45, severity: 'hard_red' },
+  fake_gov_url:         { id: 'fake_gov_url',          en: 'URL mimics government agency but is NOT on .gov.ph', tl: 'Pekeng link — nagpapanggap na opisyal na website ng gobyerno', riskPoints: 45, severity: 'hard_red' },
+  smishing_threat:      { id: 'smishing_threat',       en: 'Threatens penalty, suspension, or legal action to pressure you to click a link', tl: 'Nagbabanta ng multa, suspensyon, o legal na hakbang para mapilitan kang mag-click', riskPoints: 40, severity: 'hard_red' },
   asks_for_otp:         { id: 'asks_for_otp',          en: 'Asking for OTP or password',         tl: 'Humihingi ng OTP o password',             riskPoints: 50,  severity: 'hard_red' },
   prize_winner:         { id: 'prize_winner',          en: 'Claims you won a prize',             tl: 'Sinasabing nanalo ka ng premyo',          riskPoints: 35,  severity: 'hard_red' },
-  official_sender:      { id: 'official_sender',       en: 'Verified sender / official number',  tl: 'Verified na sender',                      riskPoints: -20, severity: 'positive' },
+  official_sender:      { id: 'official_sender',       en: 'Verified sender / official number',  tl: 'Verified na nagpadala',                   riskPoints: -20, severity: 'positive' },
 
   // Profile Check
   no_post_history:      { id: 'no_post_history',       en: 'No post history or very new account',tl: 'Walang post history o bagong account',    riskPoints: 20,  severity: 'medium' },
@@ -144,8 +147,8 @@ const CATEGORY_SIGNALS: Record<CategoryId, { signals: string[]; hardRedPairs: st
     hardRedPairs: [['domain_lookalike'], ['no_https', 'no_contact_info']],
   },
   sms_text: {
-    signals: ['link_in_sms', 'unknown_sender', 'bank_impersonation', 'asks_for_otp', 'prize_winner', 'official_sender'],
-    hardRedPairs: [['asks_for_otp'], ['bank_impersonation', 'link_in_sms'], ['prize_winner']],
+    signals: ['link_in_sms', 'unknown_sender', 'bank_impersonation', 'gov_impersonation', 'fake_gov_url', 'smishing_threat', 'asks_for_otp', 'prize_winner', 'official_sender'],
+    hardRedPairs: [['asks_for_otp'], ['bank_impersonation', 'link_in_sms'], ['prize_winner'], ['gov_impersonation'], ['fake_gov_url'], ['smishing_threat']],
   },
   profile_check: {
     signals: ['no_post_history', 'photos_stock', 'inconsistent_info', 'established_profile', 'many_complaints', 'rush_payment'],
@@ -363,6 +366,13 @@ export function detectCategory(text: string): CategoryId {
     return 'sms_text'
   }
 
+  // Government impersonation / smishing threat detection
+  const govAgencies = ['mmda', 'ncap', 'lto', 'bir', 'sss', 'philhealth', 'pag-ibig', 'pagibig', 'comelec', 'doh notice', 'lgu notice']
+  const smishingThreats = ['penalty bill', 'past due', 'failure to pay', 'traffic violation', 'vehicle registration', 'warrant of arrest', 'license suspended', 'legal action will']
+  if (govAgencies.some(g => lower.includes(g)) || smishingThreats.some(t => lower.includes(t))) {
+    return 'sms_text'
+  }
+
   let best: CategoryId = 'online_purchase'
   let bestScore = 0
 
@@ -446,9 +456,26 @@ export function detectSignals(text: string, categoryId: CategoryId): string[] {
     ['too_good_prices',      () => lower.includes('% off') && (lower.includes('90') || lower.includes('80') || lower.includes('70'))],
     // SMS
     ['bank_impersonation',   () => lower.includes('bdo') || lower.includes('bpi') || lower.includes('metrobank') || lower.includes('gcash') && lower.includes('verify')],
+    ['gov_impersonation',    () => {
+      const agencies = ['mmda', 'ncap', 'lto', 'bir', 'sss', 'philhealth', 'pag-ibig', 'pagibig', 'comelec', 'doh', 'deped']
+      const threatWords = ['notice', 'penalty', 'violation', 'past due', 'failure to pay', 'warrant', 'suspended', 'bill', 'overdue', 'summons']
+      return agencies.some(a => lower.includes(a)) && threatWords.some(t => lower.includes(t))
+    }],
+    ['fake_gov_url',         () => {
+      // URL that has a Philippine gov agency name but is NOT on .gov.ph
+      const agencyInUrl = /\b(lto|mmda|bir|sss|philhealth|pagibig|pag-ibig|comelec|poea|dole|nbi|pnp)\b/.test(lower)
+      const isOfficialDomain = lower.includes('.gov.ph')
+      const hasAnyUrl = /\b\w[\w-]*\.(com|net|org|mx|xyz|top|info|io|co|cc|tk|ml|ga|cf)\b/.test(lower)
+      return agencyInUrl && !isOfficialDomain && hasAnyUrl
+    }],
+    ['smishing_threat',      () => {
+      const threats = ['failure to pay', 'will result', 'penalty bill', 'past due', 'warrant of arrest', 'license will be', 'vehicle registration will', 'legal action', 'court summons', 'your account will be', 'suspended if']
+      const hasLink = /\b\w[\w-]*\.\w{2,6}\b/.test(lower)
+      return threats.some(t => lower.includes(t)) && hasLink
+    }],
     ['asks_for_otp',         () => lower.includes('otp') || lower.includes('one time pin') || lower.includes('verification code')],
     ['prize_winner',         () => lower.includes('nanalo') || lower.includes('you have won') || lower.includes('claim your prize')],
-    ['link_in_sms',          () => categoryId === 'sms_text' && (lower.includes('http') || lower.includes('click'))],
+    ['link_in_sms',          () => categoryId === 'sms_text' && (lower.includes('http') || /\b\w[\w-]*\.(com|net|org|mx|xyz|top|info|ph)\b/.test(lower))],
     // Profile
     ['photos_stock',         () => lower.includes('stock photo') || lower.includes('reverse image')],
     ['many_complaints',      () => lower.includes('scammer') || lower.includes('scam report') || lower.includes('nandaya')],
