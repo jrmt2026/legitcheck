@@ -8,7 +8,9 @@ import toast from 'react-hot-toast'
 interface Props {
   checkId?: string
   categoryId: CategoryId
-  detectedIdentifiers?: string[]   // phone numbers / accounts found in analyzed text
+  detectedIdentifiers?: string[]
+  forceOpen?: boolean
+  onClose?: () => void
 }
 
 const PLATFORMS = [
@@ -34,8 +36,11 @@ const ID_TYPES = [
   { value: 'other',    label: 'Other' },
 ]
 
-export default function ReportScamModal({ checkId, categoryId, detectedIdentifiers = [] }: Props) {
+export default function ReportScamModal({ checkId, categoryId, detectedIdentifiers = [], forceOpen = false, onClose }: Props) {
   const [open, setOpen]           = useState(false)
+
+  const isOpen = open || forceOpen
+  function handleClose() { setOpen(false); onClose?.() }
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone]           = useState(false)
 
@@ -80,10 +85,10 @@ export default function ReportScamModal({ checkId, categoryId, detectedIdentifie
         Report this as a scam
       </button>
 
-      {open && (
+      {isOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={handleClose} />
 
           {/* Sheet */}
           <div className="relative w-full max-w-lg bg-paper rounded-t-3xl sm:rounded-2xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col">
@@ -92,7 +97,7 @@ export default function ReportScamModal({ checkId, categoryId, detectedIdentifie
                 <h2 className="text-base font-semibold text-ink">Report a Scam</h2>
                 <p className="text-xs text-ink-3 mt-0.5">Your report helps protect other Filipinos.</p>
               </div>
-              <button onClick={() => setOpen(false)} className="text-ink-3 hover:text-ink transition-colors p-1">
+              <button onClick={handleClose} className="text-ink-3 hover:text-ink transition-colors p-1">
                 <X size={20} />
               </button>
             </div>
@@ -106,7 +111,7 @@ export default function ReportScamModal({ checkId, categoryId, detectedIdentifie
                 <p className="text-sm text-ink-3 text-center leading-relaxed">
                   Salamat! Your report has been added to the database. It will help warn others checking this account.
                 </p>
-                <button onClick={() => setOpen(false)} className="mt-2 px-6 py-2.5 bg-ink text-white rounded-xl text-sm font-medium">
+                <button onClick={handleClose} className="mt-2 px-6 py-2.5 bg-ink text-white rounded-xl text-sm font-medium">
                   Done
                 </button>
               </div>

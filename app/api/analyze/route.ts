@@ -228,16 +228,18 @@ SCORING GUIDE — be strictly calibrated. Green requires CONFIRMED positive evid
 - 0-19: Near-certain scam — confirmed patterns (guaranteed returns, withdrawal fees, pay-to-earn, OTP requests, impersonation)
 
 ABSOLUTE RULES — never break these:
-1. UNKNOWN ≠ SAFE. If you cannot confirm legitimacy with evidence, score 40-55. Never give 60+ just because you saw nothing suspicious.
-2. A social media profile (Facebook, Instagram, TikTok) with no transaction context: score 40-55 MAXIMUM. You cannot assess a profile as safe without knowing what it's being used for.
-3. A random image or screenshot with minimal context: score 40-55. Say "Not enough context to assess — describe what you are checking."
+1. UNKNOWN ≠ SAFE. If you cannot confirm legitimacy with evidence, score 35-45. Never give 60+ just because you saw nothing suspicious.
+2. A social media profile (Facebook, Instagram, TikTok) with no transaction context: score 35-45 MAXIMUM. You cannot assess a profile as safe without knowing what it's being used for.
+3. A random image or screenshot with minimal context: score 35-45. Say "Not enough context to assess — describe what you are checking and paste the actual conversation."
 4. Green (60+) REQUIRES at least one confirmed positive: official platform, verified business, established brand, or web search confirming legitimacy.
 5. If you have web search results showing scam reports: trustScore must be 0-25.
 6. If a scam database hit is present in the context: trustScore must be 0-20. Always.
 7. Guaranteed returns + referral commissions: trustScore 0-15. Always.
 8. Job offer requiring upfront fee: trustScore 0-15. Always.
 9. Withdrawal fee to "release" funds: trustScore 0-10. Always.
-10. If content is ONLY a social media profile photo with no transaction or seller context: return trustScore 45, verdict "yellow", and headlineFinding "Upload a screenshot of the actual conversation or offer — a profile photo alone cannot be assessed."
+10. If content is ONLY a social media profile photo with no transaction or seller context: return trustScore 38, verdict "yellow", and headlineFinding "Upload a screenshot of the actual conversation or offer — a profile photo alone cannot be assessed."
+11. Facebook/social media loan groups, lending pages, or investment groups with NO verified SEC or BSP registration shown: trustScore 25-38 MAXIMUM. Unregistered online lending is illegal in the Philippines and extremely high risk — treat as red flag by default.
+12. Any page or group offering loans, cash advances, or investments through Facebook/Messenger/Telegram with no official license proof: trustScore 20-35. These are the most common vehicle for illegal lending and advance-fee fraud in the Philippines.
 ${hasImages ? '11. Images provided — analyze visually: fake payment screenshots, stock profile photos, edited amounts, suspicious UI patterns.' : ''}
 ${hasSearchResults ? '12. Web search results provided — treat as primary evidence. Positive coverage = raise score. Scam reports = drop to 0-25.' : ''}
 ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity. Drop trustScore to 0-25 immediately.' : ''}`
@@ -334,9 +336,9 @@ ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity
     finalResult.subheadline = { en: 'Add more context — paste the actual message, offer, or conversation.', tl: 'Magbigay ng mas detalyadong impormasyon para ma-assess.' }
     finalResult.action      = { en: 'Paste the actual message or describe what you are checking.', tl: 'I-paste ang mensahe o ilarawan kung ano ang sinusuri.' }
   } else if (verdictColor === 'yellow') {
-    finalResult.headline    = { en: 'Verify Before Paying', tl: 'I-verify Bago Magbayad' }
-    finalResult.subheadline = { en: 'Concerns found — ask for proof before you pay.', tl: 'May alalahanin — humingi ng patunay bago magbayad.' }
-    finalResult.action      = { en: 'Ask for proof. Use official channels only.', tl: 'Humingi ng patunay. Official channels lang.' }
+    finalResult.headline    = { en: 'Verify Before Proceeding', tl: 'I-verify Bago Tumuloy' }
+    finalResult.subheadline = { en: 'Concerns found — do not share personal details or send money without verifying.', tl: 'May alalahanin — huwag magbigay ng personal na impormasyon o magpadala ng pera nang hindi na-verify.' }
+    finalResult.action      = { en: 'Stop. Verify identity and credentials first.', tl: 'Tigil. I-verify muna ang pagkakakilanlan at kredensyal.' }
   } else {
     finalResult.headline    = { en: 'Looks Legitimate', tl: 'Mukhang Lehitimo' }
     finalResult.subheadline = { en: 'Positive signals found. Still use official channels.', tl: 'May positibong senyales. Gamitin pa rin ang official channels.' }

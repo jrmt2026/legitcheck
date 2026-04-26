@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Copy, Check, MessageCircle, ExternalLink, AlertTriangle, CheckCircle2, Search } from 'lucide-react'
+import { ArrowLeft, Copy, Check, MessageCircle, ExternalLink, AlertTriangle, CheckCircle2, Search, Flag } from 'lucide-react'
 import type { DecisionResult } from '@/types'
 import toast from 'react-hot-toast'
 import ShareButton from './ShareButton'
@@ -48,6 +48,7 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
   const [lang, setLang] = useState<'en' | 'tl'>('en')
   const [copied, setCopied] = useState(false)
   const [checkedEvidence, setCheckedEvidence] = useState<Set<number>>(new Set())
+  const [showReportFromChecklist, setShowReportFromChecklist] = useState(false)
 
   const v = VERDICT_STYLES[result.color]
   const L = (obj: { en: string; tl: string }) => obj[lang]
@@ -283,9 +284,14 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
             {/* Evidence checklist */}
             <div className="px-4 py-4">
               <div className="sec-label">
-                {lang === 'tl' ? 'Kung mag-re-report ka — ihanda ito:' : 'If you decide to report — gather:'}
+                {lang === 'tl' ? 'Kung mag-re-report ka — ihanda ito:' : 'If you decide to report — gather these first:'}
               </div>
-              <div className="space-y-2 mt-2">
+              <p className="text-xs text-ink-3 mt-1 mb-3">
+                {lang === 'tl'
+                  ? 'I-tick ang mga hawak mo, tapos pindutin ang Report para magsumite.'
+                  : 'Tick what you have, then hit Report to submit to authorities.'}
+              </p>
+              <div className="space-y-2">
                 {result.evidenceItems.map((e, i) => (
                   <button key={i} onClick={() => toggleEvidence(i)}
                     className="flex items-center gap-3 w-full text-left group">
@@ -298,6 +304,14 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
                   </button>
                 ))}
               </div>
+              {checkedEvidence.size > 0 && (
+                <button
+                  onClick={() => setShowReportFromChecklist(true)}
+                  className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-red text-white text-sm font-medium hover:opacity-90 transition-all active:scale-95">
+                  <Flag size={13} />
+                  {lang === 'tl' ? `Mag-report — ${checkedEvidence.size} ebidensya handa` : `Report this — ${checkedEvidence.size} item${checkedEvidence.size > 1 ? 's' : ''} ready`}
+                </button>
+              )}
             </div>
 
           </div>
@@ -336,6 +350,8 @@ export default function ResultClient({ result, checkId, inputText = '' }: Props)
             checkId={checkId}
             categoryId={result.categoryId}
             detectedIdentifiers={detectedPhones}
+            forceOpen={showReportFromChecklist}
+            onClose={() => setShowReportFromChecklist(false)}
           />
         </div>
 
