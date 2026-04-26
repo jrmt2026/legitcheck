@@ -40,12 +40,17 @@ export const SIGNALS: Record<string, Signal> = {
   no_contract:          { id: 'no_contract',           en: 'No contract or proposal',            tl: 'Walang kontrata o proposal',              riskPoints: 20,  severity: 'medium' },
 
   // Property
-  title_available:      { id: 'title_available',       en: 'Title copy available',               tl: 'May kopya ng title',                      riskPoints: -10, severity: 'positive' },
+  title_available:      { id: 'title_available',       en: 'Title copy available for verification', tl: 'May kopya ng title',                   riskPoints: -10, severity: 'positive' },
   seller_matches_title: { id: 'seller_matches_title',  en: 'Seller name matches title',          tl: 'Tugma ang pangalan sa title',             riskPoints: -25, severity: 'positive' },
+  dhsud_accredited:     { id: 'dhsud_accredited',      en: 'Developer is DHSUD/HLURB accredited',tl: 'DHSUD/HLURB accredited ang developer',   riskPoints: -25, severity: 'positive' },
+  prc_licensed_broker:  { id: 'prc_licensed_broker',   en: 'Broker holds valid PRC license',     tl: 'May PRC license ang broker',             riskPoints: -15, severity: 'positive' },
   title_mismatch:       { id: 'title_mismatch',        en: 'Seller / title name mismatch',       tl: 'Hindi tugma ang seller at title',         riskPoints: 40,  severity: 'hard_red' },
-  no_authority:         { id: 'no_authority',          en: 'No authority to sell',               tl: 'Walang karapatang magbenta',              riskPoints: 35,  severity: 'hard_red' },
-  deposit_first:        { id: 'deposit_first',         en: 'Deposit required before documents',  tl: 'Bayad bago makita ang docs',              riskPoints: 35,  severity: 'hard_red' },
-  personal_acct:        { id: 'personal_acct',         en: 'Payment to personal account',        tl: 'Bayad sa personal na account',            riskPoints: 35,  severity: 'hard_red' },
+  no_authority:         { id: 'no_authority',          en: 'No authority to sell shown',         tl: 'Walang karapatang magbenta',              riskPoints: 35,  severity: 'hard_red' },
+  deposit_first:        { id: 'deposit_first',         en: 'Deposit/reservation required before documents', tl: 'Bayad bago makita ang docs',   riskPoints: 40,  severity: 'hard_red' },
+  personal_acct:        { id: 'personal_acct',         en: 'Payment to personal account (not company)', tl: 'Bayad sa personal na account',      riskPoints: 40,  severity: 'hard_red' },
+  gcash_for_property:   { id: 'gcash_for_property',    en: 'GCash used for property reservation/payment', tl: 'GCash ang paraan ng bayad sa lupa', riskPoints: 45, severity: 'hard_red' },
+  price_too_cheap:      { id: 'price_too_cheap',       en: 'Property price unrealistically low', tl: 'Napakamura ng presyo ng lupa',            riskPoints: 30,  severity: 'high' },
+  no_dhsud_mention:     { id: 'no_dhsud_mention',      en: 'No developer accreditation (DHSUD/HLURB) mentioned', tl: 'Walang DHSUD/HLURB accreditation', riskPoints: 25, severity: 'high' },
 
   // Job / Agency
   processing_fee:       { id: 'processing_fee',        en: 'Processing fee before contract',     tl: 'Bayad bago ang kontrata',                 riskPoints: 35,  severity: 'hard_red' },
@@ -120,8 +125,8 @@ const CATEGORY_SIGNALS: Record<CategoryId, { signals: string[]; hardRedPairs: st
     hardRedPairs: [['sudden_bank_change']],
   },
   property: {
-    signals: ['title_mismatch', 'no_authority', 'deposit_first', 'personal_acct', 'title_available', 'seller_matches_title'],
-    hardRedPairs: [['deposit_first', 'no_authority'], ['title_mismatch']],
+    signals: ['title_mismatch', 'no_authority', 'deposit_first', 'personal_acct', 'gcash_for_property', 'price_too_cheap', 'no_dhsud_mention', 'title_available', 'seller_matches_title', 'dhsud_accredited', 'prc_licensed_broker'],
+    hardRedPairs: [['deposit_first', 'no_authority'], ['title_mismatch'], ['gcash_for_property'], ['personal_acct', 'deposit_first']],
   },
   job_agency: {
     signals: ['processing_fee', 'no_dole_license', 'pay_to_earn', 'personal_acct', 'verified_employer', 'formal_contract'],
@@ -391,8 +396,14 @@ export function detectSignals(text: string, categoryId: CategoryId): string[] {
     ['processing_fee',       () => lower.includes('processing fee') || lower.includes('placement fee')],
     ['pay_to_earn',          () => lower.includes('pay to earn') || lower.includes('bayad muna para kumita')],
     // Property
-    ['deposit_first',        () => lower.includes('deposit') && (lower.includes('bago') || lower.includes('before') || lower.includes('muna'))],
+    ['deposit_first',        () => (lower.includes('reservation') || lower.includes('deposit')) && (lower.includes('bago') || lower.includes('before') || lower.includes('muna') || lower.includes('first'))],
     ['personal_acct',        () => lower.includes('personal account') || lower.includes('personal na account')],
+    ['gcash_for_property',   () => (lower.includes('lote') || lower.includes('lot') || lower.includes('lupa') || lower.includes('property') || lower.includes('condo') || lower.includes('house')) && (lower.includes('gcash') || lower.includes('maya') || lower.includes('gcash number'))],
+    ['price_too_cheap',      () => (lower.includes('lote') || lower.includes('lot') || lower.includes('lupa')) && (lower.includes('libre') || lower.includes('presyo') || /\b[1-9]\d{3}\s*(per|\/)\s*(sqm|sq\.m)/.test(lower))],
+    ['no_dhsud_mention',     () => (lower.includes('developer') || lower.includes('subdivision') || lower.includes('condo')) && !lower.includes('dhsud') && !lower.includes('hlurb')],
+    ['dhsud_accredited',     () => lower.includes('dhsud') || lower.includes('hlurb')],
+    ['prc_licensed_broker',  () => lower.includes('prc') && (lower.includes('broker') || lower.includes('license'))],
+    ['title_available',      () => lower.includes('tct') || lower.includes('oct') || lower.includes('title') && lower.includes('available')],
     // Donation
     ['emotional_pressure',   () => lower.includes('please') || lower.includes('biktima') || lower.includes('sunog') || lower.includes('calamity')],
     ['acct_mismatch',        () => lower.includes('ibang account') || lower.includes('different account')],

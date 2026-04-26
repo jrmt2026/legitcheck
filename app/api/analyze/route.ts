@@ -211,7 +211,7 @@ Analyze everything provided and return ONLY this JSON (no markdown, no text outs
   "verdict": "yellow",
   "headlineFinding": "The single most important conclusion in one direct sentence (e.g., 'This is a textbook advance fee scam — the withdrawal fee alone confirms it')",
   "findings": [
-    "OBSERVATION: [exact thing found] — REASON: [why this is a red flag or concern, in plain language a Filipino can understand]. Example: 'Seller asks for GCash payment outside Shopee checkout — this removes all buyer protection and is the most common method used in online selling scams in the Philippines'",
+    "OBSERVATION: [exact thing found] — REASON: [why this is a red flag or concern, in plain language a Filipino can understand]",
     "OBSERVATION: [next specific finding] — REASON: [plain explanation of the risk]"
   ],
   "positiveIndicators": [
@@ -219,6 +219,24 @@ Analyze everything provided and return ONLY this JSON (no markdown, no text outs
   ],
   "confidence": "high"
 }
+
+FINDINGS ARE MANDATORY. You must ALWAYS return at least 1 finding — even for uncertain cases. If you cannot confirm it is a scam, still state specifically WHAT you see and WHY it does or does not raise concern. "Not enough context" is never an acceptable finding on its own — explain what context is missing and what that means. A finding like "OBSERVATION: Only a screenshot with no conversation or transaction details shown — REASON: Without seeing the actual offer or messages, we cannot assess the specific risk, but submitting unverified screenshots alone is not enough to clear anyone" is valid.
+
+PROPERTY / LOT TRANSACTION RULES — apply these when content involves real estate:
+- Reservation fee paid via GCash or personal account: trustScore 10-25 (hard red — legitimate developers never accept GCash reservations)
+- Price per sqm unrealistically cheap vs Philippine market rates: flag it
+- No mention of DHSUD/HLURB developer accreditation: flag it
+- Title not shown or seller cannot produce TCT/OCT: flag it
+- Seller is an individual (not a licensed broker or registered developer): flag it
+- Payment instructions go to a personal name rather than a company: hard red
+- "Reservation" required before you can see/verify documents: hard red
+
+WHAT CONFIRMED LEGITIMACY LOOKS LIKE FOR PROPERTY:
+- Developer is DHSUD-accredited (verifiable at dhsud.gov.ph)
+- Broker holds a valid PRC license
+- Payment goes to company escrow or bank account under developer name
+- TCT/OCT can be verified at LRA before paying
+- Contract to Sell is a formal legal document
 
 SCORING GUIDE — be strictly calibrated. Green requires CONFIRMED positive evidence, not just absence of red flags:
 - 80-100: CONFIRMED legitimate — official platform checkout (Shopee/Lazada), verified government site (.gov.ph), known major brand, SEC/DTI registration confirmed, established bank
@@ -345,19 +363,43 @@ ${scamDbContext ? '13. SCAM DATABASE HIT — prior reports exist for this entity
     finalResult.action      = { en: 'Proceed carefully. Always use official channels.', tl: 'Mag-ingat pa rin. Gamitin ang official channels.' }
   }
 
-  // Replace reasons with Claude's findings (more meaningful than keyword hits)
+  // Build reasons: Claude findings are primary.
+  // If Claude found nothing, fall back to ALL keyword engine reasons (not just hard_reds).
+  // This ensures the keyword engine always surfaces scam patterns Claude missed.
+  const keywordReasons = claudeFindings.length === 0
+    ? kwResult.reasons.filter(r => r.severity !== 'positive') // all non-positive keyword hits
+    : kwResult.reasons.filter(r => r.severity === 'hard_red') // only hard reds to supplement Claude
+
   finalResult.reasons = [
     ...claudeFindings,
     ...positiveIndicators,
-    // Keep keyword-engine hard red signals if they fired
-    ...kwResult.reasons.filter(r => r.severity === 'hard_red'),
+    ...keywordReasons,
   ]
 
-  // If no reasons at all, add the entity summary as context
-  if (finalResult.reasons.length === 0 && trustScore >= 65) {
+  // Deduplicate by id
+  const seen = new Set<string>()
+  finalResult.reasons = finalResult.reasons.filter(r => {
+    if (seen.has(r.id)) return false
+    seen.add(r.id)
+    return true
+  })
+
+  // If still no reasons and score is green, add confirmation note
+  if (finalResult.reasons.length === 0 && trustScore >= 70) {
     finalResult.reasons = [{
-      id: 'no_flags', en: 'No specific red flags detected in the content provided.',
-      tl: 'Walang nakitang red flag sa ibinigay na content.', riskPoints: 0, severity: 'positive',
+      id: 'no_flags', en: 'No specific red flags detected in the content provided. This result is based only on what was submitted.',
+      tl: 'Walang nakitang red flag sa ibinigay na content. Base lang ito sa ibinigay mo.', riskPoints: 0, severity: 'positive',
+    }]
+  }
+
+  // If score is below 60 but still no reasons at all, add a generic uncertainty finding
+  // so the user always sees SOMETHING explaining the score
+  if (finalResult.reasons.length === 0 && trustScore < 60) {
+    finalResult.reasons = [{
+      id: 'insufficient_context',
+      en: 'OBSERVATION: Limited information was submitted — REASON: Without the actual conversation, offer details, or transaction context, we cannot fully assess the risk. Submit the actual messages or describe what you are checking for a more accurate result.',
+      tl: 'OBSERVATION: Hindi sapat ang ibinigay na impormasyon — REASON: Kailangan ng actual na mensahe o detalye ng transaksyon para ma-assess nang maayos.',
+      riskPoints: 0, severity: 'medium',
     }]
   }
 
