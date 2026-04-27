@@ -357,13 +357,33 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
 
     const aiResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1200,
+      max_tokens: 2048,
       system: systemPrompt,
       messages: [{ role: 'user', content: messageContent }],
     })
 
-    const raw = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : '{}'
-    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+    const rawText = aiResponse.content[0].type === 'text' ? aiResponse.content[0].text : '{}'
+    // Robust JSON extraction — handles markdown fences and truncated responses
+    let jsonStr = rawText.replace(/```json\s*|```\s*/g, '').trim()
+    // If JSON is truncated (cut off mid-stream), attempt to close it
+    if (!jsonStr.endsWith('}')) {
+      const lastBrace = jsonStr.lastIndexOf('}')
+      jsonStr = lastBrace > 0 ? jsonStr.slice(0, lastBrace + 1) + '}' : jsonStr + '}'
+    }
+    let parsed: any = {}
+    try { parsed = JSON.parse(jsonStr) } catch {
+      // Try extracting just the fields we need via regex fallback
+      const obs = rawText.match(/"observation"\s*:\s*"([^"]+)"/g) || []
+      if (obs.length > 0) {
+        parsed = {
+          entitySummary: (rawText.match(/"entitySummary"\s*:\s*"([^"]+)"/) || [])[1] || '',
+          headlineFinding: (rawText.match(/"headlineFinding"\s*:\s*"([^"]+)"/) || [])[1] || '',
+          redFlags: obs.slice(0, 4).map(o => ({ observation: o.replace(/"observation"\s*:\s*"/, '').replace(/"$/, ''), reason: 'See full analysis.', severity: 'high' })),
+          positiveIndicators: [],
+          canRead: true,
+        }
+      }
+    }
 
     entitySummary = parsed.entitySummary || ''
     const officialResource: string = parsed.officialResource || ''
@@ -432,13 +452,25 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     }))
   } catch (e) {
     console.error('Claude analysis error:', e)
-    // Fallback: keyword engine primary
-    const catId    = detectCategory(analysisText)
-    const sigIds   = detectSignals(analysisText, catId)
-    const fallback = computeRisk(catId, sigIds)
-    trustScore   = 100 - fallback.score
-    verdictColor = fallback.color
-    return NextResponse.json({ result: { ...fallback, aiInsights: ['Analysis service temporarily unavailable. Result based on keyword detection only.'] }, extractedText: analysisText })
+    // Fallback: keyword engine runs as primary — still returns real findings
+    const catIdFb  = detectCategory(analysisText)
+    const sigIdsFb = detectSignals(analysisText, catIdFb)
+    const fallback = computeRisk(catIdFb, sigIdsFb)
+    // Override score/color from keyword findings
+    const fbTrustScore = 100 - fallback.score
+    const fbColor: RiskColor = fbTrustScore < 35 ? 'red' : fbTrustScore < 70 ? 'yellow' : 'green'
+    fallback.color = fbColor
+    if (fbColor === 'red') {
+      fallback.headline    = { en: 'Scam Warning — Stop', tl: 'Babala: Scam — Tigil' }
+      fallback.subheadline = { en: 'High risk detected. Do not send money or share details.', tl: 'Mataas ang panganib. Huwag magpadala ng pera.' }
+      fallback.action      = { en: 'Stop. Do not pay or share any info.', tl: 'Tigil. Huwag magbayad o magbigay ng impormasyon.' }
+    }
+    return NextResponse.json({
+      result: { ...fallback, aiInsights: ['AI deep analysis unavailable — result based on pattern detection.'] },
+      extractedText: analysisText,
+      trustScore: fbTrustScore,
+      scoreSteps: [{ label: 'Pattern-based detection (AI unavailable)', delta: 0 }],
+    })
   }
 
   // ── 7. Keyword engine — supplements Claude, catches what Claude missed ──────────
