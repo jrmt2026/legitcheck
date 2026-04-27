@@ -127,6 +127,26 @@ export const maxDuration = 60 // allow up to 60s on Vercel Pro; free tier capped
 
 export async function POST(req: Request) {
   const { text, images } = await req.json()
+
+  // ── Auth check + rate limiting ────────────────────────────────────────────
+  const authHeader = req.headers.get('authorization')
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+  let tier: 'guest' | 'basic' | 'full' = 'guest'
+
+  if (token) {
+    const { data: { user } } = await supabase.auth.getUser(token)
+    if (user) {
+      const { count } = await supabase
+        .from('checks')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+      if ((count ?? 0) >= 1) {
+        return NextResponse.json({ error: 'upgrade_required', checksUsed: count ?? 0 }, { status: 402 })
+      }
+      tier = 'basic'
+    }
+  }
+
   let analysisText = text || ''
 
   // ── 1. Prepare images — NO separate OCR call. Claude sees images directly. ───
@@ -462,6 +482,7 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
       extractedText: analysisText,
       trustScore: fbTrustScore,
       scoreSteps: [{ label: 'Pattern-based detection (AI unavailable)', delta: 0 }],
+      tier,
     })
   }
 
@@ -554,5 +575,5 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
 
   finalResult.aiInsights = aiInsights
 
-  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [] })
+  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier })
 }

@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, ArrowRight, X, Loader2, ImagePlus, RotateCcw,
-  ShieldCheck, Lock, FlaskConical, AlertTriangle, Clock,
+  ShieldCheck, Lock, AlertTriangle, Clock, Check, UserPlus,
 } from 'lucide-react'
 import AccountLookup from '@/components/AccountLookup'
 import { detectCategory, detectSignals, computeRisk } from '@/lib/decisionEngine'
@@ -59,7 +59,7 @@ function fileToBase64(file: File): Promise<{ data: string; mimeType: string }> {
   })
 }
 
-type Step = 'input' | 'analyzing' | 'result'
+type Step = 'input' | 'analyzing' | 'result' | 'signup_wall' | 'upgrade_wall'
 type Tab  = 'check' | 'history'
 
 interface HistoryCheck {
@@ -94,6 +94,7 @@ export default function BuyerPage() {
   const [result, setResult]                       = useState<DecisionResult | null>(null)
   const [scoreSteps, setScoreSteps]               = useState<Array<{ label: string; delta: number }>>([])
   const [savedCheckId, setSavedCheckId]           = useState<string | undefined>()
+  const [tier, setTier]                           = useState<'guest' | 'basic' | 'full'>('guest')
   const [error, setError]                         = useState('')
   const [history, setHistory]                     = useState<HistoryCheck[]>([])
   const [loadingHistory, setLoadingHistory]       = useState(false)
@@ -151,11 +152,22 @@ export default function BuyerPage() {
     setResult(null)
     setScoreSteps([])
     setSavedCheckId(undefined)
+    setTier('guest')
     setError('')
   }
 
   async function handleAnalyze() {
     if (!input.trim() && uploadedFiles.length === 0) return
+
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
+
+    if (!user && localStorage.getItem('lc_guest_used')) {
+      setStep('signup_wall')
+      return
+    }
+
     setStep('analyzing')
     setError('')
 
@@ -166,20 +178,28 @@ export default function BuyerPage() {
 
     let finalResult: DecisionResult | null = null
     let analysisText = input
+    let resultTier: 'guest' | 'basic' | 'full' = user ? 'basic' : 'guest'
 
     try {
       const imageFiles = uploadedFiles.filter(f => f.type.startsWith('image/'))
       const images = imageFiles.length > 0 ? await Promise.all(imageFiles.map(fileToBase64)) : []
+      const reqHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (session?.access_token) reqHeaders['Authorization'] = `Bearer ${session.access_token}`
       const res = await fetch('/api/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: reqHeaders,
         body: JSON.stringify({ text: input, images, categoryHint: selectedCategory }),
       })
+      if (res.status === 402) {
+        setStep('upgrade_wall')
+        return
+      }
       const data = await res.json()
       if (res.ok) {
         finalResult    = data.result
         analysisText   = data.extractedText || input
         if (data.scoreSteps) setScoreSteps(data.scoreSteps)
+        if (data.tier) resultTier = data.tier
       }
     } catch { /* fall through to local engine */ }
 
@@ -195,13 +215,13 @@ export default function BuyerPage() {
       }
     }
 
+    if (!user) localStorage.setItem('lc_guest_used', '1')
+    setTier(resultTier)
     setResult(finalResult)
     setStep('result')
 
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+    if (user) {
+      try {
         const { data: check } = await supabase.from('checks').insert({
           user_id:     user.id,
           category_id: finalResult.categoryId,
@@ -211,8 +231,63 @@ export default function BuyerPage() {
           result:      finalResult,
         }).select('id').single()
         if (check) setSavedCheckId(check.id)
-      }
-    } catch { /* silent — result already shown */ }
+      } catch { /* silent — result already shown */ }
+    }
+  }
+
+  // ── Signup wall ────────────────────────────────────────────────────────────
+  if (step === 'signup_wall') {
+    return (
+      <div className="min-h-screen bg-ink flex flex-col items-center justify-center px-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mb-5">
+          <ShieldCheck size={28} className="text-brand-green" />
+        </div>
+        <h1 className="text-2xl font-bold text-white mb-2">See the full report</h1>
+        <p className="text-white/60 text-sm mb-8 max-w-xs leading-relaxed">
+          You've used your free guest check. Sign up free to get 1 more check with a detailed analysis.
+        </p>
+        <div className="w-full max-w-xs space-y-3">
+          <Link href="/auth/signup" className="w-full bg-brand-green text-white font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <UserPlus size={16} /> Create free account
+          </Link>
+          <Link href="/auth/login" className="w-full bg-white/10 text-white font-semibold rounded-2xl py-3.5 flex items-center justify-center hover:bg-white/20 transition-all text-sm">
+            Log in to existing account
+          </Link>
+        </div>
+        <button onClick={reset} className="mt-8 text-xs text-white/30 hover:text-white/60 transition-colors">
+          ← Try a different check
+        </button>
+      </div>
+    )
+  }
+
+  // ── Upgrade wall ───────────────────────────────────────────────────────────
+  if (step === 'upgrade_wall') {
+    return (
+      <div className="min-h-screen bg-ink flex flex-col items-center justify-center px-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-5">
+          <Lock size={24} className="text-white/60" />
+        </div>
+        <h1 className="text-2xl font-bold text-white mb-2">Free check used</h1>
+        <p className="text-white/60 text-sm mb-6 max-w-xs leading-relaxed">
+          You've used your free account check. Upgrade to Pro for unlimited checks with full reports.
+        </p>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 max-w-xs w-full text-left space-y-2.5">
+          {['Unlimited checks', 'Full AI analysis', 'Score breakdown', 'History & reports', 'Priority support'].map(f => (
+            <div key={f} className="flex items-center gap-2.5 text-sm text-white/70">
+              <Check size={13} className="text-brand-green flex-shrink-0" />
+              {f}
+            </div>
+          ))}
+        </div>
+        <button disabled className="w-full max-w-xs bg-brand-green/40 text-white/50 font-bold rounded-2xl py-4 mb-3 cursor-not-allowed text-sm">
+          Upgrade to Pro — coming soon
+        </button>
+        <button onClick={reset} className="text-sm text-white/40 hover:text-white/70 transition-colors">
+          ← Back
+        </button>
+      </div>
+    )
   }
 
   // ── Result screen ──────────────────────────────────────────────────────────
@@ -232,7 +307,7 @@ export default function BuyerPage() {
             <RotateCcw size={14} /> New check
           </button>
         </header>
-        <ResultClient result={result} checkId={savedCheckId} inputText={input} scoreSteps={scoreSteps} />
+        <ResultClient result={result} checkId={savedCheckId} inputText={input} scoreSteps={scoreSteps} tier={tier} />
       </div>
     )
   }
@@ -289,12 +364,6 @@ export default function BuyerPage() {
           <span className="text-lg font-bold text-white tracking-tight flex-1">
             LegitCheck <span className="font-light opacity-50">PH</span>
           </span>
-          <Link
-            href="/demo"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 text-white/80 text-sm font-medium hover:bg-white/20 transition-all"
-          >
-            <FlaskConical size={13} /> Demo
-          </Link>
           <Link
             href="/sos"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red/20 text-red-300 text-sm font-medium hover:bg-brand-red/30 transition-all"

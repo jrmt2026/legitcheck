@@ -6,7 +6,7 @@ import {
   ArrowLeft, Copy, Check, MessageCircle, ExternalLink,
   AlertTriangle, CheckCircle2, Search, Flag, TrendingDown,
   TrendingUp, Minus, ShieldCheck, Share2, RotateCcw,
-  ChevronDown, ChevronUp, Zap,
+  ChevronDown, ChevronUp, Zap, Lock, UserPlus,
 } from 'lucide-react'
 import type { DecisionResult } from '@/types'
 import toast from 'react-hot-toast'
@@ -18,9 +18,9 @@ interface Props {
   checkId?: string
   inputText?: string
   scoreSteps?: Array<{ label: string; delta: number }>
+  tier?: 'guest' | 'basic' | 'full'
 }
 
-// ── Risk level derived from trustScore ────────────────────────────────────────
 type RiskLevel = 'critical' | 'high' | 'caution' | 'low' | 'safe'
 
 function getRiskLevel(trustScore: number, isHardRed: boolean): RiskLevel {
@@ -32,14 +32,14 @@ function getRiskLevel(trustScore: number, isHardRed: boolean): RiskLevel {
 }
 
 interface RiskTheme {
-  bg: string           // hero section background
-  border: string       // card border
-  scoreColor: string   // score number
-  accentBg: string     // pill / accent background
-  accentText: string   // pill text
-  flagBg: string       // flag card background
-  flagBorder: string   // flag card border
-  label: string        // human-readable label
+  bg: string
+  border: string
+  scoreColor: string
+  accentBg: string
+  accentText: string
+  flagBg: string
+  flagBorder: string
+  label: string
   emoji: string
   recommendation: string
   recommendationTl: string
@@ -144,7 +144,6 @@ function parseFinding(text: string): { observation: string; reason: string } | n
   }
 }
 
-// Animated score counter
 function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }) {
   const [displayed, setDisplayed] = useState(0)
   const radius = 54
@@ -177,14 +176,12 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
   return (
     <div className="relative inline-flex items-center justify-center">
       <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90">
-        {/* Track */}
         <circle
           cx="64" cy="64" r={radius}
           fill="none"
           stroke={isCritical ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)'}
           strokeWidth="8"
         />
-        {/* Fill */}
         <circle
           cx="64" cy="64" r={radius}
           fill="none"
@@ -206,7 +203,7 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
   )
 }
 
-export default function ResultClient({ result, checkId, inputText = '', scoreSteps = [] }: Props) {
+export default function ResultClient({ result, checkId, inputText = '', scoreSteps = [], tier = 'full' }: Props) {
   const [lang, setLang]                           = useState<'en' | 'tl'>('en')
   const [copied, setCopied]                       = useState(false)
   const [checkedEvidence, setCheckedEvidence]     = useState<Set<number>>(new Set())
@@ -227,6 +224,9 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
   const redFlags  = result.reasons.filter(r => r.severity !== 'positive')
   const positives = result.reasons.filter(r => r.severity === 'positive')
 
+  const visibleRedFlags  = tier === 'guest' ? redFlags.slice(0, 1)  : tier === 'basic' ? redFlags.slice(0, 3)  : redFlags
+  const visiblePositives = tier === 'guest' ? []                     : tier === 'basic' ? positives.slice(0, 2) : positives
+
   function toggleEvidence(i: number) {
     setCheckedEvidence(prev => {
       const next = new Set(prev)
@@ -243,7 +243,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
       ``,
     ]
     if (entitySummary)   lines.push(`What we analyzed: ${entitySummary}`, ``)
-    if (headlineFinding)  lines.push(`Main conclusion: ${headlineFinding}`, ``)
+    if (headlineFinding) lines.push(`Main conclusion: ${headlineFinding}`, ``)
     if (redFlags.length > 0) {
       lines.push(lang === 'tl' ? 'Mga Red Flag:' : 'Red flags found:')
       redFlags.forEach(r => {
@@ -354,7 +354,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
       {/* ── Analysis body ─────────────────────────────────────────────────── */}
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4 animate-slide-up">
 
-        {/* ── What was analyzed ─────────────────────────────────────────── */}
+        {/* What was analyzed */}
         {entitySummary && (
           <div className="card flex gap-3 items-start">
             <Search size={15} className="text-ink-3 flex-shrink-0 mt-0.5" />
@@ -365,7 +365,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Main conclusion ───────────────────────────────────────────── */}
+        {/* Main conclusion */}
         {headlineFinding && (
           <div className={`rounded-2xl border px-4 py-4 ${theme.flagBg} ${theme.flagBorder}`}>
             <p className={`micro-label mb-1.5 ${isCritical ? 'text-brand-red-dark' : ''}`}>
@@ -380,8 +380,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Official resource ─────────────────────────────────────────── */}
-        {officialResource && (
+        {/* Official resource — basic and full only */}
+        {officialResource && tier !== 'guest' && (
           <div className="card flex gap-3 items-start bg-paper-2">
             <ShieldCheck size={15} className="text-brand-teal flex-shrink-0 mt-0.5" />
             <div>
@@ -391,14 +391,18 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Red flags ─────────────────────────────────────────────────── */}
-        {redFlags.length > 0 && (
+        {/* Red flags */}
+        {visibleRedFlags.length > 0 && (
           <div className="space-y-2.5">
             <p className="sec-label flex items-center gap-1.5">
               <AlertTriangle size={11} className="text-brand-red opacity-80" />
-              {lang === 'tl' ? `Mga Nakitang Babala (${redFlags.length})` : `Red Flags Found (${redFlags.length})`}
+              {tier === 'full'
+                ? (lang === 'tl' ? `Mga Nakitang Babala (${redFlags.length})` : `Red Flags Found (${redFlags.length})`)
+                : (lang === 'tl'
+                    ? `Mga Nakitang Babala (${visibleRedFlags.length} ng ${redFlags.length})`
+                    : `Red Flags Found (${visibleRedFlags.length} of ${redFlags.length})`)}
             </p>
-            {redFlags.map((r, i) => {
+            {visibleRedFlags.map((r, i) => {
               const parsed = parseFinding(L(r))
               const isHard = r.severity === 'hard_red'
               return (
@@ -415,10 +419,10 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
                   {parsed ? (
                     <>
                       <p className="text-sm font-semibold text-ink leading-snug">{parsed.observation}</p>
-                      <p className="text-xs text-ink-3 leading-relaxed">{parsed.reason}</p>
+                      {tier !== 'guest' && <p className="text-xs text-ink-3 leading-relaxed">{parsed.reason}</p>}
                     </>
                   ) : (
-                    <p className="text-sm text-ink-2 leading-snug">{L(r)}</p>
+                    <p className="text-sm text-ink-2 leading-snug">{tier === 'guest' ? L(r).slice(0, 80) : L(r)}</p>
                   )}
                 </div>
               )
@@ -426,14 +430,41 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Positive signals ──────────────────────────────────────────── */}
-        {positives.length > 0 && (
+        {/* Guest signup gate */}
+        {tier === 'guest' && (
+          <div className="bg-ink rounded-2xl p-5 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mx-auto">
+              <Lock size={20} className="text-brand-green" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-white mb-1">
+                {redFlags.length > 1
+                  ? `${redFlags.length - 1} more red flag${redFlags.length - 1 > 1 ? 's' : ''} found`
+                  : 'See the full analysis'}
+              </p>
+              <p className="text-sm text-white/60 leading-relaxed">
+                Sign up free to unlock the full report — score breakdown, all red flags, and what to do next.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Link href="/auth/signup" className="w-full bg-brand-green text-white font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity text-sm">
+                <UserPlus size={15} /> Create free account
+              </Link>
+              <Link href="/auth/login" className="w-full bg-white/10 text-white font-medium rounded-xl py-3 flex items-center justify-center hover:bg-white/20 transition-all text-sm">
+                Log in
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Positive signals — basic and full */}
+        {visiblePositives.length > 0 && (
           <div className="space-y-2.5">
             <p className="sec-label flex items-center gap-1.5">
               <CheckCircle2 size={11} className="text-brand-green opacity-80" />
               {lang === 'tl' ? `Mga Positibong Tanda (${positives.length})` : `Positive Signals (${positives.length})`}
             </p>
-            {positives.map((r, i) => {
+            {visiblePositives.map((r, i) => {
               const parsed = parseFinding(L(r))
               return (
                 <div key={i} className="bg-brand-green-light border border-brand-green/20 rounded-2xl px-4 py-3.5 space-y-1">
@@ -451,8 +482,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── No findings fallback ──────────────────────────────────────── */}
-        {redFlags.length === 0 && positives.length === 0 && !headlineFinding && (
+        {/* No findings fallback — full only */}
+        {tier === 'full' && redFlags.length === 0 && positives.length === 0 && !headlineFinding && (
           <div className="card text-center py-6">
             <p className="text-sm text-ink-3 italic">
               {lang === 'tl'
@@ -462,8 +493,34 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Score breakdown (collapsible) ─────────────────────────────── */}
-        {scoreSteps.length > 1 && (
+        {/* Basic upgrade gate */}
+        {tier === 'basic' && (
+          <div className="bg-ink rounded-2xl p-5 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto">
+              <Lock size={20} className="text-white/60" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-white mb-1">Unlock full analysis</p>
+              <p className="text-sm text-white/60 leading-relaxed">
+                Upgrade to Pro for unlimited checks, score breakdown, evidence checklist, and full reports.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-left">
+              {['Unlimited checks', 'Score breakdown', 'Evidence checklist', 'Copy & share reports'].map(f => (
+                <div key={f} className="flex items-center gap-1.5 text-xs text-white/60">
+                  <Check size={10} className="text-brand-green flex-shrink-0" />
+                  {f}
+                </div>
+              ))}
+            </div>
+            <button disabled className="w-full bg-brand-green/40 text-white/50 font-bold rounded-xl py-3.5 cursor-not-allowed text-sm">
+              Upgrade to Pro — coming soon
+            </button>
+          </div>
+        )}
+
+        {/* Score breakdown — full only */}
+        {tier === 'full' && scoreSteps.length > 1 && (
           <div className="card">
             <button
               onClick={() => setShowBreakdown(v => !v)}
@@ -480,9 +537,9 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
                   let running = 70
                   return scoreSteps.map((step, i) => {
                     running = i === 0 ? 70 : Math.max(0, Math.min(100, running + step.delta))
-                    const isStart    = i === 0
+                    const isStart     = i === 0
                     const isDeduction = step.delta < 0
-                    const isBonus    = step.delta > 0
+                    const isBonus     = step.delta > 0
                     return (
                       <div key={i} className={`flex items-center gap-3 px-3 py-2.5 text-xs border-b border-line last:border-0 ${
                         isStart     ? 'bg-paper-2' :
@@ -514,62 +571,64 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Recommended next steps ────────────────────────────────────── */}
-        <div className="card space-y-3">
-          <p className="sec-label">{lang === 'tl' ? 'Inirerekomendang Susunod na Hakbang' : 'Recommended next steps'}</p>
-          {(riskLevel === 'critical' || riskLevel === 'high') && (
-            <div className="space-y-2">
-              {[
-                { en: 'Do not send money or click any link in this message.', tl: 'Huwag magpadala ng pera o mag-click ng link sa mensaheng ito.' },
-                { en: 'Screenshot everything as evidence before blocking.', tl: 'I-screenshot ang lahat bilang ebidensya bago mag-block.' },
-                { en: 'Verify through the official website or platform directly.', tl: 'Mag-verify sa opisyal na website o platform direkta.' },
-                { en: 'Report to the relevant authority using the contacts below.', tl: 'Mag-report sa may-katuturng awtoridad gamit ang mga contact sa ibaba.' },
-              ].map((s, i) => (
-                <div key={i} className="flex gap-2.5 items-start">
-                  <div className="w-5 h-5 rounded-full bg-brand-red-light border border-brand-red/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[10px] font-bold text-brand-red-dark">{i + 1}</span>
+        {/* Recommended next steps — basic and full */}
+        {tier !== 'guest' && (
+          <div className="card space-y-3">
+            <p className="sec-label">{lang === 'tl' ? 'Inirerekomendang Susunod na Hakbang' : 'Recommended next steps'}</p>
+            {(riskLevel === 'critical' || riskLevel === 'high') && (
+              <div className="space-y-2">
+                {[
+                  { en: 'Do not send money or click any link in this message.', tl: 'Huwag magpadala ng pera o mag-click ng link sa mensaheng ito.' },
+                  { en: 'Screenshot everything as evidence before blocking.', tl: 'I-screenshot ang lahat bilang ebidensya bago mag-block.' },
+                  { en: 'Verify through the official website or platform directly.', tl: 'Mag-verify sa opisyal na website o platform direkta.' },
+                  { en: 'Report to the relevant authority using the contacts below.', tl: 'Mag-report sa may-katuturng awtoridad gamit ang mga contact sa ibaba.' },
+                ].map((s, i) => (
+                  <div key={i} className="flex gap-2.5 items-start">
+                    <div className="w-5 h-5 rounded-full bg-brand-red-light border border-brand-red/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-brand-red-dark">{i + 1}</span>
+                    </div>
+                    <p className="text-sm text-ink-2 leading-snug">{lang === 'tl' ? s.tl : s.en}</p>
                   </div>
-                  <p className="text-sm text-ink-2 leading-snug">{lang === 'tl' ? s.tl : s.en}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          {riskLevel === 'caution' && (
-            <div className="space-y-2">
-              {[
-                { en: 'Ask the seller/recruiter for verifiable proof of identity or registration.', tl: 'Humingi ng berifikabol na patunay ng pagkakakilanlan o rehistrasyon.' },
-                { en: 'Use COD, escrow, or a platform with buyer protection.', tl: 'Gumamit ng COD, escrow, o platform na may buyer protection.' },
-                { en: 'Do not pay in full upfront — use partial payment or safe channels.', tl: 'Huwag magbayad ng buo nang maaga — gumamit ng partial payment o ligtas na channel.' },
-              ].map((s, i) => (
-                <div key={i} className="flex gap-2.5 items-start">
-                  <div className="w-5 h-5 rounded-full bg-brand-orange-light border border-brand-orange/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[10px] font-bold text-brand-orange-dark">{i + 1}</span>
+                ))}
+              </div>
+            )}
+            {riskLevel === 'caution' && (
+              <div className="space-y-2">
+                {[
+                  { en: 'Ask the seller/recruiter for verifiable proof of identity or registration.', tl: 'Humingi ng berifikabol na patunay ng pagkakakilanlan o rehistrasyon.' },
+                  { en: 'Use COD, escrow, or a platform with buyer protection.', tl: 'Gumamit ng COD, escrow, o platform na may buyer protection.' },
+                  { en: 'Do not pay in full upfront — use partial payment or safe channels.', tl: 'Huwag magbayad ng buo nang maaga — gumamit ng partial payment o ligtas na channel.' },
+                ].map((s, i) => (
+                  <div key={i} className="flex gap-2.5 items-start">
+                    <div className="w-5 h-5 rounded-full bg-brand-orange-light border border-brand-orange/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-brand-orange-dark">{i + 1}</span>
+                    </div>
+                    <p className="text-sm text-ink-2 leading-snug">{lang === 'tl' ? s.tl : s.en}</p>
                   </div>
-                  <p className="text-sm text-ink-2 leading-snug">{lang === 'tl' ? s.tl : s.en}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          {(riskLevel === 'low' || riskLevel === 'safe') && (
-            <div className="space-y-2">
-              {[
-                { en: 'Looks generally okay, but still verify before sending money.', tl: 'Mukhang okay sa pangkalahatan, pero mag-verify pa rin bago magpadala ng pera.' },
-                { en: 'Use a payment method with buyer protection (Shopee, Lazada, COD).', tl: 'Gumamit ng paraan ng bayad na may buyer protection (Shopee, Lazada, COD).' },
-                { en: 'This score is guidance only — not a guarantee of safety.', tl: 'Gabay lamang ang score na ito — hindi garantiya ng kaligtasan.' },
-              ].map((s, i) => (
-                <div key={i} className="flex gap-2.5 items-start">
-                  <div className="w-5 h-5 rounded-full bg-brand-green-light border border-brand-green/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[10px] font-bold text-brand-green-dark">{i + 1}</span>
+                ))}
+              </div>
+            )}
+            {(riskLevel === 'low' || riskLevel === 'safe') && (
+              <div className="space-y-2">
+                {[
+                  { en: 'Looks generally okay, but still verify before sending money.', tl: 'Mukhang okay sa pangkalahatan, pero mag-verify pa rin bago magpadala ng pera.' },
+                  { en: 'Use a payment method with buyer protection (Shopee, Lazada, COD).', tl: 'Gumamit ng paraan ng bayad na may buyer protection (Shopee, Lazada, COD).' },
+                  { en: 'This score is guidance only — not a guarantee of safety.', tl: 'Gabay lamang ang score na ito — hindi garantiya ng kaligtasan.' },
+                ].map((s, i) => (
+                  <div key={i} className="flex gap-2.5 items-start">
+                    <div className="w-5 h-5 rounded-full bg-brand-green-light border border-brand-green/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-brand-green-dark">{i + 1}</span>
+                    </div>
+                    <p className="text-sm text-ink-2 leading-snug">{lang === 'tl' ? s.tl : s.en}</p>
                   </div>
-                  <p className="text-sm text-ink-2 leading-snug">{lang === 'tl' ? s.tl : s.en}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* ── Report channels ───────────────────────────────────────────── */}
-        {result.reportChannels.length > 0 && (
+        {/* Report channels — basic and full */}
+        {tier !== 'guest' && result.reportChannels.length > 0 && (
           <div className="card">
             <p className="sec-label">{lang === 'tl' ? 'Saan Mag-report' : 'Report to'}</p>
             <div className="space-y-2 mt-1">
@@ -591,8 +650,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Evidence checklist ────────────────────────────────────────── */}
-        {result.evidenceItems.length > 0 && (
+        {/* Evidence checklist — full only */}
+        {tier === 'full' && result.evidenceItems.length > 0 && (
           <div className="card">
             <p className="sec-label">
               {lang === 'tl' ? 'Kung mag-re-report ka — ihanda ito:' : 'If reporting — gather these first:'}
@@ -627,7 +686,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* ── Disclaimer ───────────────────────────────────────────────── */}
+        {/* Disclaimer */}
         <div className="border-l-2 border-line pl-3 py-1">
           <p className="text-xs text-ink-3 leading-relaxed">
             {lang === 'tl'
@@ -636,24 +695,28 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </p>
         </div>
 
-        {/* ── Action buttons ────────────────────────────────────────────── */}
+        {/* Action buttons */}
         <div className="space-y-2.5">
-          <button onClick={copyReport}
-            className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border text-sm font-semibold transition-all active:scale-95 ${
-              copied ? 'bg-brand-green-light border-brand-green/20 text-brand-green-dark' : 'bg-paper border-line text-ink-2 hover:bg-ink hover:text-white hover:border-ink'
-            }`}>
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? 'Copied!' : lang === 'tl' ? 'Kopyahin ang Report' : 'Copy report'}
-          </button>
+          {tier === 'full' && (
+            <>
+              <button onClick={copyReport}
+                className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border text-sm font-semibold transition-all active:scale-95 ${
+                  copied ? 'bg-brand-green-light border-brand-green/20 text-brand-green-dark' : 'bg-paper border-line text-ink-2 hover:bg-ink hover:text-white hover:border-ink'
+                }`}>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? 'Copied!' : lang === 'tl' ? 'Kopyahin ang Report' : 'Copy report'}
+              </button>
 
-          {checkId && <ShareButton checkId={checkId} lang={lang} />}
+              {checkId && <ShareButton checkId={checkId} lang={lang} />}
 
-          {checkId && (
-            <Link href={`/dashboard/agents?checkId=${checkId}`}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
-              <MessageCircle size={14} />
-              {lang === 'tl' ? 'Kausapin ang FraudGuard AI' : 'Talk to FraudGuard AI'}
-            </Link>
+              {checkId && (
+                <Link href={`/dashboard/agents?checkId=${checkId}`}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
+                  <MessageCircle size={14} />
+                  {lang === 'tl' ? 'Kausapin ang FraudGuard AI' : 'Talk to FraudGuard AI'}
+                </Link>
+              )}
+            </>
           )}
 
           <Link href="/buyer"
