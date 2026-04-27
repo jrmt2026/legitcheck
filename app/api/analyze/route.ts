@@ -346,7 +346,7 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     messageContent.push({ type: 'text', text: `Analyze this for Philippine scam risk:\n\n${contextText}${signalContext}` })
 
     const aiResponse = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
       system: systemPrompt,
       messages: [{ role: 'user', content: messageContent }],
@@ -458,11 +458,10 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
       fallback.action      = { en: 'Stop. Do not pay or share any info.', tl: 'Tigil. Huwag magbayad o magbigay ng impormasyon.' }
     }
     return NextResponse.json({
-      result: { ...fallback, aiInsights: [`AI error: ${errMsg}`] },
+      result: { ...fallback, aiInsights: ['Pattern detection only — AI analysis unavailable.'] },
       extractedText: analysisText,
       trustScore: fbTrustScore,
       scoreSteps: [{ label: 'Pattern-based detection (AI unavailable)', delta: 0 }],
-      debugError: errMsg,
     })
   }
 

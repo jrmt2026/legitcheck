@@ -119,13 +119,9 @@ export default function BuyerPage() {
         finalResult = data.result
         analysisText = data.extractedText || input
         if (data.scoreSteps) setScoreSteps(data.scoreSteps)
-      } else {
-        // API returned an error — surface it so we can debug
-        setError(`Debug: HTTP ${res.status} — ${data?.error || data?.debugError || JSON.stringify(data)}`)
       }
-    } catch (err: any) {
-      // Network/timeout error — surface it
-      setError(`Debug: Network error — ${err?.message || String(err)}`)
+    } catch {
+      // fall through to local engine
     }
 
     if (!finalResult) {

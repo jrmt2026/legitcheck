@@ -6,7 +6,9 @@
       "Bash(npm run *)",
       "Bash(npx vercel *)",
       "Bash(vercel --prod)",
-      "Bash(vercel env *)"
+      "Bash(vercel env *)",
+      "Bash(npx tsc *)",
+      "Bash(vercel logs *)"
     ]
   }
 }
