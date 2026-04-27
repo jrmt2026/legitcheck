@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Search, Shield, Clock, TrendingUp, ChevronRight } from 'lucide-react'
+import { Search, Clock, ChevronRight, Settings } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -21,105 +21,95 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
-  const colorMap = {
-    green: { bg: 'bg-brand-green-light', text: 'text-brand-green-dark', label: 'Low risk' },
+  const colorMap: Record<string, { bg: string; text: string; label: string }> = {
+    green:  { bg: 'bg-brand-green-light',  text: 'text-brand-green-dark',  label: 'Low risk'     },
     yellow: { bg: 'bg-brand-yellow-light', text: 'text-brand-yellow-dark', label: 'Verify first' },
-    red: { bg: 'bg-brand-red-light', text: 'text-brand-red-dark', label: "Don't proceed" },
+    orange: { bg: 'bg-[#FFF0E6]',          text: 'text-brand-orange-dark', label: 'Caution'      },
+    red:    { bg: 'bg-brand-red-light',    text: 'text-brand-red-dark',    label: "Don't proceed" },
   }
 
   const firstName = profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'there'
+  const initials  = profile?.full_name
+    ? profile.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : (user.email?.[0] ?? '?').toUpperCase()
 
   return (
     <div className="min-h-screen bg-paper-2">
-      {/* Nav */}
-      <header className="border-b border-line bg-paper sticky top-0 z-50">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-baseline gap-1">
-            <span className="text-base font-medium text-ink">LegitCheck</span>
-            <span className="text-base font-light text-ink-2">PH</span>
+
+      {/* Header */}
+      <header className="bg-ink sticky top-0 z-50 px-4 py-4 flex items-center justify-between">
+        <span className="text-lg font-bold text-white tracking-tight">
+          LegitCheck <span className="font-light opacity-50">PH</span>
+        </span>
+        <Link href="/profile" className="flex items-center gap-2 group">
+          <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+            <span className="text-xs font-bold text-white">{initials}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-ink-3 hidden sm:block">{user.email}</span>
-            <form action="/auth/signout" method="post">
-              <button type="submit" className="flex items-center gap-1.5 text-xs text-ink-3 hover:text-ink transition-colors">
-                <LogOut size={13} />
-                Sign out
-              </button>
-            </form>
-          </div>
-        </div>
+          <Settings size={15} className="text-white/40 group-hover:text-white transition-colors" />
+        </Link>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-5">
+
         {/* Greeting */}
         <div>
-          <h1 className="text-xl font-medium text-ink">Hi, {firstName} 👋</h1>
-          <p className="text-sm text-ink-3 mt-0.5">
-            {profile?.credits_remaining ?? 3} free checks remaining
-          </p>
+          <h1 className="text-2xl font-bold text-ink tracking-tight">Hi, {firstName} 👋</h1>
+          <p className="text-sm text-ink-3 mt-1">What do you want to check today?</p>
         </div>
 
         {/* Main CTA */}
-        <Link href="/buyer" className="block card hover:border-ink-3/40 transition-colors group">
+        <Link href="/buyer" className="block bg-ink text-white rounded-2xl p-5 hover:opacity-90 active:scale-[0.98] transition-all group">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-ink rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Search size={18} className="text-white" />
               </div>
               <div>
-                <div className="text-sm font-medium text-ink">Check something now</div>
-                <div className="text-xs text-ink-3 mt-0.5">Paste a chat, link, or account number</div>
+                <div className="text-base font-bold text-white">Check something now</div>
+                <div className="text-xs text-white/50 mt-0.5">Paste a chat, link, or account number</div>
               </div>
             </div>
-            <ChevronRight size={16} className="text-ink-3 group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight size={18} className="text-white/40 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </Link>
-
-        {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/seller" className="card hover:border-ink-3/40 transition-colors group">
-            <Shield size={16} className="text-ink-3 mb-2" />
-            <div className="text-sm font-medium text-ink">Seller Help</div>
-            <div className="text-xs text-ink-3 mt-0.5">Prove you're legit</div>
-          </Link>
-          <Link href="/dashboard/agents" className="card hover:border-ink-3/40 transition-colors group">
-            <TrendingUp size={16} className="text-ink-3 mb-2" />
-            <div className="text-sm font-medium text-ink">AI Agents</div>
-            <div className="text-xs text-ink-3 mt-0.5">Talk to experts</div>
-          </Link>
-        </div>
 
         {/* Recent checks */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <div className="sec-label mb-0">Recent checks</div>
+            <p className="sec-label mb-0">Your recent checks</p>
             {recentChecks && recentChecks.length > 0 && (
-              <Link href="/dashboard/history" className="text-xs text-ink-3 hover:text-ink transition-colors">View all</Link>
+              <Link href="/buyer" className="text-xs text-ink-3 hover:text-ink transition-colors flex items-center gap-1">
+                View all <ChevronRight size={11} />
+              </Link>
             )}
           </div>
 
           {!recentChecks || recentChecks.length === 0 ? (
-            <div className="card text-center py-8">
+            <div className="bg-paper border border-line rounded-2xl text-center py-10">
               <Clock size={24} className="text-ink-3 mx-auto mb-2" />
-              <div className="text-sm text-ink-3">No checks yet</div>
+              <div className="text-sm font-medium text-ink-2">No checks yet</div>
               <div className="text-xs text-ink-3 mt-1">Your check history will appear here</div>
             </div>
           ) : (
             <div className="space-y-2">
               {recentChecks.map(check => {
-                const colors = colorMap[check.color as keyof typeof colorMap]
+                const colors = colorMap[check.color] ?? colorMap.red
                 return (
-                  <Link key={check.id} href={`/result/${check.id}`} className="card flex items-center gap-3 hover:border-ink-3/40 transition-colors">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colors.bg}`}>
-                      <span className={`text-xs font-mono font-medium ${colors.text}`}>{check.score}</span>
+                  <Link
+                    key={check.id}
+                    href={`/result/${check.id}`}
+                    className="flex items-center gap-3 bg-paper border border-line rounded-2xl px-4 py-3.5 hover:bg-paper-2 transition-all group"
+                  >
+                    <div className={`px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 ${colors.bg} ${colors.text}`}>
+                      {colors.label}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-xs font-medium ${colors.text}`}>{colors.label}</div>
-                      <div className="text-xs text-ink-3 truncate mt-0.5">
-                        {check.input_text?.slice(0, 60)}…
+                      <div className="text-sm text-ink truncate">{check.input_text?.slice(0, 60)}…</div>
+                      <div className="text-xs text-ink-3 mt-0.5">
+                        {new Date(check.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </div>
                     </div>
-                    <ChevronRight size={14} className="text-ink-3 flex-shrink-0" />
+                    <ChevronRight size={14} className="text-ink-3 flex-shrink-0 group-hover:text-ink transition-colors" />
                   </Link>
                 )
               })}
@@ -127,18 +117,24 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Plan info */}
-        <div className="card bg-ink text-white">
-          <div className="text-xs font-mono text-white/50 mb-1 uppercase tracking-wider">Current plan</div>
-          <div className="text-sm font-medium capitalize mb-2">{profile?.plan || 'Free'}</div>
-          <p className="text-xs text-white/60 leading-relaxed mb-3">
-            Upgrade for deeper checks, case packs, evidence guides, and agent access.
-          </p>
-          <Link href="/dashboard/pricing" className="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition-colors">
-            View plans
-            <ChevronRight size={12} />
-          </Link>
+        {/* Quick links */}
+        <div>
+          <p className="sec-label mb-3">Quick actions</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/report" className="flex flex-col gap-1.5 bg-paper border border-line rounded-2xl p-4 hover:border-ink-3 hover:bg-paper-2 transition-all">
+              <span className="text-2xl">🚩</span>
+              <div className="text-sm font-semibold text-ink">Report a scam</div>
+              <div className="text-xs text-ink-3">Help protect others</div>
+            </Link>
+            <Link href="/library" className="flex flex-col gap-1.5 bg-paper border border-line rounded-2xl p-4 hover:border-ink-3 hover:bg-paper-2 transition-all">
+              <span className="text-2xl">📚</span>
+              <div className="text-sm font-semibold text-ink">Scam library</div>
+              <div className="text-xs text-ink-3">Learn what to watch for</div>
+            </Link>
+          </div>
         </div>
+
+        <div className="pb-8" />
       </main>
     </div>
   )

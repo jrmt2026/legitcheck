@@ -109,11 +109,11 @@ export default async function HomePage() {
           <div className="max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full text-white/50 text-xs font-semibold font-mono mb-3 border border-white/10">
-                <FlaskConical size={11} /> Sample checks
+                <FlaskConical size={11} /> Demo examples — not real checks
               </div>
-              <h2 className="text-3xl font-bold text-white tracking-tight">See it in action</h2>
+              <h2 className="text-3xl font-bold text-white tracking-tight">See how it works</h2>
               <p className="text-base text-white/40 mt-2 max-w-sm mx-auto">
-                Real Philippine scam scenarios — tap to see the full analysis.
+                These are sample scenarios we built. Tap one to see a full analysis.
               </p>
             </div>
 
