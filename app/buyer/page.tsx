@@ -114,14 +114,18 @@ export default function BuyerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: input, images }),
       })
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
         finalResult = data.result
         analysisText = data.extractedText || input
         if (data.scoreSteps) setScoreSteps(data.scoreSteps)
+      } else {
+        // API returned an error — surface it so we can debug
+        setError(`Debug: HTTP ${res.status} — ${data?.error || data?.debugError || JSON.stringify(data)}`)
       }
-    } catch {
-      // fall through to local engine
+    } catch (err: any) {
+      // Network/timeout error — surface it
+      setError(`Debug: Network error — ${err?.message || String(err)}`)
     }
 
     if (!finalResult) {
