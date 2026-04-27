@@ -7,6 +7,7 @@ import {
   HeartHandshake, FlaskConical, Flag, BookOpen, Users,
   Zap, Lock, CheckCircle,
 } from 'lucide-react'
+import HeroSection from '@/components/HeroSection'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -61,71 +62,7 @@ export default async function HomePage() {
       <main>
 
         {/* ── Hero ────────────────────────────────────────────────────────────── */}
-        <section className="max-w-2xl mx-auto px-4 pt-16 pb-14 text-center">
-
-          {/* Animated scanner shield */}
-          <div className="relative flex items-center justify-center mb-10 h-32">
-            <div className="absolute w-28 h-28 rounded-full border border-brand-green/40 animate-pulse-ring" />
-            <div className="absolute w-28 h-28 rounded-full border border-brand-green/25 animate-pulse-ring" style={{ animationDelay: '0.7s' }} />
-            <div className="absolute w-28 h-28 rounded-full border border-brand-green/15 animate-pulse-ring" style={{ animationDelay: '1.4s' }} />
-            <div className="relative w-20 h-20 rounded-full bg-brand-green/10 border border-brand-green/30 flex items-center justify-center">
-              <ShieldCheck size={36} className="text-brand-green animate-float" />
-            </div>
-          </div>
-
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full text-white/50 text-xs font-semibold font-mono mb-6 border border-white/10 animate-fade-in">
-            <div className="w-1.5 h-1.5 rounded-full bg-brand-green animate-throb" />
-            #1 Anti-scam tool for Filipinos
-          </div>
-
-          <h1
-            className="text-5xl sm:text-6xl font-bold text-white tracking-tight leading-none mb-4 animate-slide-up"
-            style={{ animationDelay: '0.1s' }}
-          >
-            Check muna<br />
-            <span className="text-white/30 font-light">bago bayad.</span>
-          </h1>
-
-          <p
-            className="text-lg text-white/50 max-w-md mx-auto leading-relaxed mb-8 animate-slide-up"
-            style={{ animationDelay: '0.2s' }}
-          >
-            Paste a message, link, account number, or screenshot.
-            Get a <strong className="text-white font-semibold">trust score</strong> in seconds — before you pay, invest, donate, or hire.
-          </p>
-
-          <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8 animate-slide-up"
-            style={{ animationDelay: '0.3s' }}
-          >
-            <Link
-              href="/buyer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-ink text-base font-bold px-7 py-4 rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-white/10"
-            >
-              <Search size={16} /> Check something now <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="/demo"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/5 text-white/70 text-base font-medium px-7 py-4 rounded-2xl border border-white/10 hover:bg-white/10 active:scale-[0.98] transition-all"
-            >
-              <FlaskConical size={16} /> Try a demo first
-            </Link>
-          </div>
-
-          {/* Trust pills */}
-          <div className="flex flex-wrap items-center justify-center gap-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            {[
-              { icon: <Lock size={11} />,         text: 'No OTPs or passwords'    },
-              { icon: <CheckCircle size={11} />,  text: 'Filipino scam patterns'  },
-              { icon: <Zap size={11} />,          text: 'Results in seconds'      },
-            ].map(({ icon, text }) => (
-              <span key={text} className="flex items-center gap-1.5 text-xs text-white/40 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-                {icon} {text}
-              </span>
-            ))}
-          </div>
-        </section>
+        <HeroSection />
 
         {/* ── Stats strip ─────────────────────────────────────────────────────── */}
         <div className="border-y border-white/10 bg-white/5 py-4">
