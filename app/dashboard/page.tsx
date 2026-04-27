@@ -8,6 +8,14 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
+  // Company accounts go to their own dashboard
+  const { data: companyProfile } = await supabase
+    .from('company_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+  if (companyProfile) redirect('/company/dashboard')
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')

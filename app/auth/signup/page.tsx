@@ -153,6 +153,11 @@ export default function SignupPage() {
             <Link href="/auth/login" className="text-ink font-semibold hover:underline">Log in</Link>
           </p>
           <div>
+            <Link href="/auth/company-signup" className="text-xs text-ink-3 hover:text-ink transition-colors">
+              Registering a business? →
+            </Link>
+          </div>
+          <div>
             <Link href="/buyer" className="text-xs text-ink-3 hover:text-ink transition-colors">
               Continue without account →
             </Link>
