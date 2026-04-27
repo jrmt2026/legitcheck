@@ -61,8 +61,8 @@ export default async function DashboardPage() {
 
         {/* Greeting */}
         <div>
-          <h1 className="text-2xl font-bold text-ink tracking-tight">Hi, {firstName} 👋</h1>
-          <p className="text-sm text-ink-3 mt-1">What do you want to check today?</p>
+          <h1 className="text-2xl font-bold text-ink tracking-tight">Hi, {firstName}.</h1>
+          <p className="text-sm text-ink-3 mt-1">Check muna bago bayad. Safe ba 'to?</p>
         </div>
 
         {/* Main CTA */}

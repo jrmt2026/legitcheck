@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ShieldCheck, Search, ArrowRight, FlaskConical, Lock, CheckCircle, Zap } from 'lucide-react'
+import { ShieldCheck, Search, ArrowRight, Lock, CheckCircle, Zap } from 'lucide-react'
 
 const LIVE_FEED = [
   { emoji: '🛍️', label: 'FB Seller',     result: 'SCAM',      color: 'text-red-400',   bg: 'bg-red-500/10 border-red-500/20'   },
@@ -88,12 +88,12 @@ export default function HeroSection() {
       {/* Headline */}
       <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tight leading-none mb-4">
         Check muna<br />
-        <span className="text-white/25 font-light">bago bayad.</span>
+        bago bayad.
       </h1>
 
       <p className="text-lg text-white/50 max-w-md mx-auto leading-relaxed mb-2">
-        Paste a message, link, account number, or screenshot.
-        Get a <strong className="text-white font-semibold">trust score</strong> in seconds.
+        Paste a suspicious message, link, seller profile, account number, or screenshot.
+        LegitCheck PH checks for <strong className="text-white font-semibold">scam red flags</strong> before you send money.
       </p>
 
       {/* Live counter */}
@@ -112,10 +112,10 @@ export default function HeroSection() {
           <Search size={16} /> Check something now <ArrowRight size={16} />
         </Link>
         <Link
-          href="/demo"
+          href="/buyer#examples"
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/5 text-white/70 text-base font-medium px-7 py-4 rounded-2xl border border-white/10 hover:bg-white/10 active:scale-[0.98] transition-all"
         >
-          <FlaskConical size={16} /> Try a demo first
+          Try a sample check
         </Link>
       </div>
 

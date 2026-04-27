@@ -57,8 +57,8 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     flagBorder: 'border-white/20',
     label: 'Critical Risk',
     emoji: '🚨',
-    recommendation: 'Stop. Do not pay.',
-    recommendationTl: 'Tigil. Huwag bayaran.',
+    recommendation: 'Stop. Critical risk detected.',
+    recommendationTl: 'Tigil. Critical risk na ito.',
     headlinePrefix: '',
   },
   high: {
@@ -85,8 +85,8 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     flagBorder: 'border-brand-orange/20',
     label: 'High Caution',
     emoji: '🔶',
-    recommendation: 'Verify before proceeding.',
-    recommendationTl: 'Mag-verify muna bago tumuloy.',
+    recommendation: 'High caution. Verify muna.',
+    recommendationTl: 'Mataas na babala. Mag-verify muna.',
     headlinePrefix: '',
   },
   low: {
@@ -97,10 +97,10 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     accentText: 'text-white',
     flagBg: 'bg-brand-yellow-light',
     flagBorder: 'border-brand-yellow/20',
-    label: 'Some Caution',
+    label: 'Caution',
     emoji: '🔔',
-    recommendation: 'Use a protected payment method.',
-    recommendationTl: 'Gumamit ng protected na paraan ng bayad.',
+    recommendation: 'Some warning signs found. Verify muna.',
+    recommendationTl: 'May mga babala. Mag-verify bago mag-send.',
     headlinePrefix: '',
   },
   safe: {
@@ -280,10 +280,10 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           <Link href="/buyer" className={`transition-colors ${isCritical ? 'text-white/70 hover:text-white' : 'text-ink-3 hover:text-ink'}`}>
             <ArrowLeft size={20} />
           </Link>
-          <div className="flex items-baseline gap-1">
+          <Link href="/" className="flex items-baseline gap-1 hover:opacity-80 transition-opacity">
             <span className={`text-base font-bold tracking-tight ${isCritical ? 'text-white' : 'text-ink'}`}>LegitCheck</span>
             <span className={`text-base font-light ${isCritical ? 'text-white/60' : 'text-ink-3'}`}>PH</span>
-          </div>
+          </Link>
         </div>
         <div className="flex items-center gap-2">
           {/* Lang toggle */}
@@ -340,12 +340,40 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
             {lang === 'tl' ? theme.recommendationTl : theme.recommendation}
           </div>
 
-          {/* Caution note for green */}
+          {/* Context note below recommendation */}
           {riskLevel === 'safe' && (
             <p className="mt-3 text-xs text-brand-green-dark opacity-60">
               {lang === 'tl'
                 ? 'Hindi ito garantiya ng kaligtasan. Mag-verify pa rin bago tumuloy.'
-                : 'This does not guarantee safety. Verify further before proceeding.'}
+                : 'This looks low risk based on what you shared, but always stay cautious.'}
+            </p>
+          )}
+          {riskLevel === 'high' && (
+            <p className="mt-3 text-xs text-brand-red-dark opacity-70">
+              {lang === 'tl'
+                ? 'Mukhang kahina-hinalang batay sa ibinigay mo.'
+                : 'This looks highly suspicious based on the information you shared.'}
+            </p>
+          )}
+          {riskLevel === 'critical' && (
+            <p className="mt-3 text-xs text-white/60">
+              {lang === 'tl'
+                ? 'Huwag tumuloy malibang ma-verify sa opisyal at pinagkakatiwalaang channel.'
+                : 'Do not proceed unless verified through official and trusted channels.'}
+            </p>
+          )}
+          {riskLevel === 'caution' && (
+            <p className="mt-3 text-xs text-brand-orange-dark opacity-70">
+              {lang === 'tl'
+                ? 'Ilang risk signal ang nakita. Tumuloy lamang pagkatapos ng sariling pag-verify.'
+                : 'Several risk signals were detected. Proceed only after independent verification.'}
+            </p>
+          )}
+          {riskLevel === 'low' && (
+            <p className="mt-3 text-xs text-brand-yellow-dark opacity-70">
+              {lang === 'tl'
+                ? 'Mag-verify muna bago magpadala ng pera.'
+                : 'Verify muna before sending money.'}
             </p>
           )}
         </div>

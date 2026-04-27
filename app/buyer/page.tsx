@@ -412,9 +412,9 @@ export default function BuyerPage() {
         <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
 
           <div>
-            <h1 className="text-2xl font-bold text-ink tracking-tight">Check something</h1>
+            <h1 className="text-2xl font-bold text-ink tracking-tight">Safe ba 'to? Check muna.</h1>
             <p className="text-sm text-ink-3 mt-1">
-              Paste a message, link, or account number — or upload a screenshot.
+              Paste a message, link, account number, seller profile, or upload a screenshot.
             </p>
           </div>
 
@@ -542,7 +542,7 @@ export default function BuyerPage() {
               disabled={!input.trim() && uploadedFiles.length === 0}
               className="w-full bg-ink text-white text-base font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Analyze now <ArrowRight size={18} />
+              Analyze Risk <ArrowRight size={18} />
             </button>
           </div>
           <div className="h-36 sm:hidden" />

@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'LegitCheck PH — Check muna bago bayad',
-  description: "The Philippines' #1 anti-scam risk checker. Verify sellers, investments, donations, job agencies, and SMS scams before you pay.",
+  description: "The Filipino scam-safety companion before sending money. Paste a suspicious message, link, seller profile, or screenshot — LegitCheck PH checks for scam red flags before you pay.",
   keywords: [
     'anti-scam Philippines', 'legit check', 'scam checker PH',
     'OFW scam', 'online seller legit', 'GCash scam', 'smishing Philippines',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'LegitCheck PH — Check muna bago bayad',
-    description: 'Paste a message, link, or screenshot. Get a trust score in seconds — before you pay.',
+    description: 'The Filipino scam-safety companion before sending money. Check muna bago bayad.',
     url: 'https://legitcheck.ph',
     siteName: 'LegitCheck PH',
     locale: 'en_PH',
