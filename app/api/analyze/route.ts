@@ -47,7 +47,7 @@ function stripHtml(html: string): string {
 
 async function fetchWebsite(url: string): Promise<{ text: string; isHttps: boolean }> {
   const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), 9000)
+  const t = setTimeout(() => ctrl.abort(), 4000)
   try {
     const res = await fetch(url, {
       signal: ctrl.signal,
@@ -123,62 +123,66 @@ function buildSearchQuery(text: string, url: string | null, phones: string[]): s
 
 // ── Main POST handler ──────────────────────────────────────────────────────────
 
+export const maxDuration = 60 // allow up to 60s on Vercel Pro; free tier capped at 10s
+
 export async function POST(req: Request) {
   const { text, images } = await req.json()
   let analysisText = text || ''
 
-  // ── 1. OCR: extract text from uploaded images ────────────────────────────────
+  // ── 1. OCR: extract text from ALL images IN PARALLEL ────────────────────────
   const imageContents: Array<{ type: 'image'; source: { type: 'base64'; media_type: ValidMediaType; data: string } }> = []
 
   if (Array.isArray(images) && images.length > 0) {
-    const parts: string[] = []
-    for (const img of images.slice(0, 4)) {
-      const data = typeof img === 'string' ? img : img.data
-      const mime = typeof img === 'string' ? 'image/jpeg' : img.mimeType
-      if (!data) continue
-      imageContents.push({ type: 'image', source: { type: 'base64', media_type: toValidMediaType(mime), data } })
+    const imgList = images.slice(0, 4).map(img => ({
+      data: typeof img === 'string' ? img : img.data,
+      mime: typeof img === 'string' ? 'image/jpeg' : img.mimeType,
+    })).filter(i => i.data)
+
+    for (const i of imgList) {
+      imageContents.push({ type: 'image', source: { type: 'base64', media_type: toValidMediaType(i.mime), data: i.data } })
+    }
+
+    // Run all OCR calls in parallel instead of sequentially
+    const ocrResults = await Promise.all(imgList.map(async i => {
       try {
         const ocr = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1024,
+          max_tokens: 800,
           messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: toValidMediaType(mime), data } },
-            { type: 'text', text: 'Extract ALL visible text from this image exactly as written. Include names, numbers, amounts, links, labels, dates, locations. Output only the extracted text, nothing else.' },
+            { type: 'image', source: { type: 'base64', media_type: toValidMediaType(i.mime), data: i.data } },
+            { type: 'text', text: 'Extract ALL visible text from this image exactly as written. Include every word, number, link, name. Output only the raw extracted text, nothing else.' },
           ]}],
         })
-        const extracted = ocr.content[0].type === 'text' ? ocr.content[0].text : ''
-        if (extracted) parts.push(extracted)
-      } catch (e) { console.error('OCR error:', e) }
-    }
+        return ocr.content[0].type === 'text' ? ocr.content[0].text : ''
+      } catch { return '' }
+    }))
+
+    const parts = ocrResults.filter(Boolean)
     if (parts.length > 0) analysisText = parts.join('\n\n---\n\n') + (text ? '\n\nAdditional context: ' + text : '')
   }
 
   if (!analysisText) return NextResponse.json({ error: 'No content to analyze' }, { status: 400 })
 
-  // ── 2. Detect phones + check scam DB ─────────────────────────────────────────
-  const phones = extractPhones(analysisText)
-  const scamDbContext = await checkScamDb(phones)
-
-  // ── 3. Fetch website content if URL present ───────────────────────────────────
-  let siteContext = ''
-  let fetchedUrl: string | null = null
-  let siteIsHttps = true
-
-  fetchedUrl = extractUrl(analysisText)
-  if (fetchedUrl) {
-    const site = await fetchWebsite(fetchedUrl)
-    siteIsHttps = site.isHttps
-    if (site.text) siteContext = `\n\n=== WEBSITE CONTENT (${fetchedUrl}) ===\n${site.text}\n=== END ===`
-    else siteContext = `\n[Website ${fetchedUrl} could not be loaded — may be down or blocking crawlers]`
-  }
-
-  // ── 4. Web search for real-time research ─────────────────────────────────────
-  let searchContext = ''
+  // ── 2-4. Phones + scam DB + website + web search — ALL IN PARALLEL ───────────
+  const phones   = extractPhones(analysisText)
+  const fetchedUrl = extractUrl(analysisText)
   const searchQuery = buildSearchQuery(analysisText, fetchedUrl, phones)
-  if (searchQuery) {
-    const results = await webSearch(searchQuery)
-    if (results) searchContext = `\n\n=== WEB SEARCH RESULTS for "${searchQuery}" ===\n${results}\n=== END ===`
-  }
+
+  const [scamDbContext, siteResult, searchResults] = await Promise.all([
+    checkScamDb(phones),
+    fetchedUrl ? fetchWebsite(fetchedUrl) : Promise.resolve({ text: '', isHttps: true }),
+    searchQuery ? webSearch(searchQuery) : Promise.resolve(''),
+  ])
+
+  const siteIsHttps = siteResult.isHttps
+  const siteContext = fetchedUrl
+    ? (siteResult.text
+        ? `\n\n=== WEBSITE CONTENT (${fetchedUrl}) ===\n${siteResult.text}\n=== END ===`
+        : `\n[Website ${fetchedUrl} could not be loaded]`)
+    : ''
+  const searchContext = searchResults
+    ? `\n\n=== WEB SEARCH RESULTS for "${searchQuery}" ===\n${searchResults}\n=== END ===`
+    : ''
 
   // ── 5. Build full context for Claude ─────────────────────────────────────────
   const fullContext = [
