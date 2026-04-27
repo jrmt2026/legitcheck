@@ -31,11 +31,11 @@ const CATEGORIES: { id: CategoryId; icon: string; label: string }[] = [
 
 const EXAMPLES = [
   { key: 'fb',     emoji: '🛍️', label: 'FB Seller',    text: 'Seller: Hi po! Available pa po yung bag. GCash nalang po tayo para mas mabilis. Account ko: 09171234567 - J. Santos. Rush po kasi maraming nagtatanong. Pag di ka nagbayad ngayon, ibebenta ko na sa iba.' },
-  { key: 'mmda',   emoji: '📱', label: 'MMDA SMS',     text: 'MMDA: Mahal na motorista, mayroon kang unpaid traffic violation na nagkakahalaga ng ₱5,000. Ang iyong lisensya ay sususpindihin sa loob ng 48 oras. I-click ang link para bayaran ngayon: http://mmda-fines-ph.com/pay' },
+  { key: 'gov',    emoji: '📱', label: "Gov't SMS",     text: 'Traffic Authority: Mahal na motorista, mayroon kang unpaid traffic violation na nagkakahalaga ng ₱5,000. Ang iyong lisensya ay sususpindihin sa loob ng 48 oras. I-click ang link para bayaran ngayon: http://gov-fines-ph.com/pay' },
   { key: 'invest', emoji: '💰', label: 'Investment',   text: 'Kumita na ng 30% monthly ang aming mga investors! Guaranteed po ang return. Mag-invite ka pa ng friends, may komisyon ka pa. Mag-invest ka na ngayon, last slots na lang. Withdrawal fee lang ng ₱2,000 para ma-release ang profit mo.' },
   { key: 'land',   emoji: '🏠', label: 'Land Deal',    text: "Sir/Ma'am, yung lote sa Cavite, 300sqm, ₱2M lang. Mag-deposit na po kayo ng ₱100K para ma-hold. Title at docs ipapakita ko pagkatapos ng payment." },
   { key: 'agency', emoji: '✈️', label: 'Job Agency',   text: 'Congratulations! Qualified ka sa deployment sa Dubai. Processing fee lang: ₱15,000 via GCash bago maibigay ang kontrata. Urgent — kailangan bukas na para ma-slot ka.' },
-  { key: 'shopee', emoji: '🛒', label: 'Shopee Order', text: 'Order #SHP-2024-99871 confirmed. Item: Korean Skincare Set ₱499. Seller: BeautyStore_PH (4.8★ 2.3k reviews). Official Shopee checkout. Estimated delivery: 3-5 days.' },
+  { key: 'online', emoji: '🛒', label: 'Online Order',  text: 'Order #ONL-2024-99871 confirmed. Item: Korean Skincare Set ₱499. Seller: BeautyStore_PH (4.8★ 2.3k reviews). Official in-platform checkout. Estimated delivery: 3-5 days.' },
 ]
 
 const SCAN_STEPS = [

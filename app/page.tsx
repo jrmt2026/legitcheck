@@ -15,10 +15,10 @@ export default async function HomePage() {
   if (user) redirect('/dashboard')
 
   const DEMO_PREVIEWS = [
-    { emoji: '🚗', title: 'MMDA Fine SMS',        risk: 'SCAM',      riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 5  },
+    { emoji: '🚗', title: "Gov't Fine SMS",         risk: 'SCAM',      riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 5  },
     { emoji: '💰', title: '30% Monthly Returns',  risk: 'SCAM',      riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 8  },
-    { emoji: '✅', title: 'Shopee Order',          risk: 'SAFE',      riskColor: 'bg-brand-green/20 text-green-300 border-brand-green/30', score: 91 },
-    { emoji: '🛍️', title: 'FB Marketplace Seller', risk: 'HIGH RISK', riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 28 },
+    { emoji: '✅', title: 'Online Order',           risk: 'SAFE',      riskColor: 'bg-brand-green/20 text-green-300 border-brand-green/30', score: 91 },
+    { emoji: '🛍️', title: 'Online Seller',          risk: 'HIGH RISK', riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 28 },
     { emoji: '✈️', title: 'OFW Job Agency',        risk: 'HIGH RISK', riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 12 },
   ]
 
