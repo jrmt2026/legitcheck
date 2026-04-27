@@ -98,11 +98,14 @@ export default function BuyerPage() {
   const [error, setError]                         = useState('')
   const [history, setHistory]                     = useState<HistoryCheck[]>([])
   const [loadingHistory, setLoadingHistory]       = useState(false)
+  const [isAuth, setIsAuth]                       = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const shared = [params.get('text'), params.get('url'), params.get('title')].filter(Boolean).join('\n')
     if (shared) setInput(shared)
+
+    createClient().auth.getUser().then(({ data: { user } }) => setIsAuth(!!user))
   }, [])
 
   useEffect(() => {
@@ -296,12 +299,12 @@ export default function BuyerPage() {
       <div className="min-h-screen bg-paper-2 animate-fade-in">
         <header className="bg-ink px-4 py-4 flex items-center justify-between sticky top-0 z-50">
           <div className="flex items-center gap-3">
-            <button onClick={reset} className="text-white/60 hover:text-white transition-colors">
+            <button onClick={reset} className="text-white/60 hover:text-white transition-colors" aria-label="Back">
               <ArrowLeft size={20} />
             </button>
-            <span className="text-lg font-bold text-white tracking-tight">
+            <Link href="/" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
               LegitCheck <span className="font-light opacity-50">PH</span>
-            </span>
+            </Link>
           </div>
           <button onClick={reset} className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors">
             <RotateCcw size={14} /> New check
@@ -317,9 +320,9 @@ export default function BuyerPage() {
     return (
       <div className="min-h-screen bg-ink flex flex-col">
         <header className="px-4 py-4">
-          <span className="text-lg font-bold text-white tracking-tight">
+          <Link href="/" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
             LegitCheck <span className="font-light opacity-50">PH</span>
-          </span>
+          </Link>
         </header>
         <div className="flex-1 flex flex-col items-center justify-center px-4 gap-8 animate-fade-in">
           <div className="relative">
@@ -361,15 +364,26 @@ export default function BuyerPage() {
           <Link href="/" className="text-white/60 hover:text-white transition-colors">
             <ArrowLeft size={20} />
           </Link>
-          <span className="text-lg font-bold text-white tracking-tight flex-1">
+          <Link href="/" className="text-lg font-bold text-white tracking-tight flex-1 hover:opacity-80 transition-opacity">
             LegitCheck <span className="font-light opacity-50">PH</span>
-          </span>
-          <Link
-            href="/sos"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red/20 text-red-300 text-sm font-medium hover:bg-brand-red/30 transition-all"
-          >
-            🚨 SOS
           </Link>
+          {isAuth ? (
+            <Link
+              href="/sos"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red/20 text-red-300 text-sm font-medium hover:bg-brand-red/30 transition-all"
+            >
+              🚨 SOS
+            </Link>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link href="/auth/login" className="text-sm text-white/60 hover:text-white transition-colors px-2 py-1.5">
+                Log in
+              </Link>
+              <Link href="/auth/signup" className="text-sm font-semibold text-ink bg-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+                Sign up
+              </Link>
+            </div>
+          )}
         </header>
 
         {/* Tab bar */}

@@ -43,17 +43,17 @@ export default async function HomePage() {
       {/* ── Nav ─────────────────────────────────────────────────────────────── */}
       <header className="border-b border-white/10 bg-ink/95 sticky top-0 z-50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <span className="text-base font-bold text-white tracking-tight">LegitCheck</span>
             <span className="text-base font-light text-white/40">PH</span>
             <span className="ml-1 text-[10px] font-bold text-brand-green font-mono bg-brand-green/10 px-1.5 py-0.5 rounded-full border border-brand-green/20">BETA</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
-            <Link href="/auth/login" className="text-sm text-white/40 px-3 py-1.5 rounded-lg hover:text-white transition-colors hidden sm:block">
+            <Link href="/auth/login" className="text-sm text-white/60 px-3 py-1.5 rounded-lg hover:text-white transition-colors">
               Log in
             </Link>
-            <Link href="/buyer" className="text-sm font-bold text-ink bg-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1.5">
-              <Search size={13} /> Check now
+            <Link href="/auth/signup" className="text-sm font-semibold text-ink bg-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity">
+              Sign up free
             </Link>
           </div>
         </div>

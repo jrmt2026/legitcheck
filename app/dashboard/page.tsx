@@ -46,9 +46,9 @@ export default async function DashboardPage() {
 
       {/* Header */}
       <header className="bg-ink sticky top-0 z-50 px-4 py-4 flex items-center justify-between">
-        <span className="text-lg font-bold text-white tracking-tight">
+        <Link href="/dashboard" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
           LegitCheck <span className="font-light opacity-50">PH</span>
-        </span>
+        </Link>
         <Link href="/profile" className="flex items-center gap-2 group">
           <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
             <span className="text-xs font-bold text-white">{initials}</span>
