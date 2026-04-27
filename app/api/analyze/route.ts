@@ -440,8 +440,10 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
       riskPoints: 0,
       severity: 'positive' as any,
     }))
-  } catch (e) {
+  } catch (e: any) {
     console.error('Claude analysis error:', e)
+    const errMsg = e?.message || e?.error?.message || String(e) || 'unknown'
+    console.error('Error detail:', errMsg)
     // Fallback: keyword engine runs as primary — still returns real findings
     const catIdFb  = detectCategory(textForKeywords)
     const sigIdsFb = detectSignals(textForKeywords, catIdFb)
@@ -456,10 +458,11 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
       fallback.action      = { en: 'Stop. Do not pay or share any info.', tl: 'Tigil. Huwag magbayad o magbigay ng impormasyon.' }
     }
     return NextResponse.json({
-      result: { ...fallback, aiInsights: ['AI deep analysis unavailable — result based on pattern detection.'] },
+      result: { ...fallback, aiInsights: [`AI error: ${errMsg}`] },
       extractedText: analysisText,
       trustScore: fbTrustScore,
       scoreSteps: [{ label: 'Pattern-based detection (AI unavailable)', delta: 0 }],
+      debugError: errMsg,
     })
   }
 
