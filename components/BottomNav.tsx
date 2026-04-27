@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Search, FlaskConical, Flag, BookOpen } from 'lucide-react'
+import { Home, Search, FlaskConical, Flag, BookOpen, UserCircle } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/',        icon: Home,          label: 'Home'    },
@@ -10,6 +10,14 @@ const NAV_ITEMS = [
   { href: '/demo',    icon: FlaskConical,  label: 'Demo'    },
   { href: '/report',  icon: Flag,          label: 'Report'  },
   { href: '/library', icon: BookOpen,      label: 'Library' },
+]
+
+const NAV_ITEMS_AUTH = [
+  { href: '/dashboard', icon: Home,          label: 'Home'    },
+  { href: '/buyer',     icon: Search,        label: 'Check'   },
+  { href: '/report',    icon: Flag,          label: 'Report'  },
+  { href: '/library',   icon: BookOpen,      label: 'Library' },
+  { href: '/profile',   icon: UserCircle,    label: 'Profile' },
 ]
 
 const HIDDEN_PREFIXES = ['/auth/', '/admin', '/dashboard/agents']

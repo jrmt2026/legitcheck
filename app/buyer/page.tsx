@@ -414,8 +414,8 @@ export default function BuyerPage() {
           </div>
         </div>
 
-        {/* Submit button — sticky on mobile */}
-        <div className="sm:static fixed bottom-0 left-0 right-0 sm:p-0 p-4 bg-paper-2/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none border-t border-line sm:border-0 z-40 pb-safe">
+        {/* Submit button — sticky on mobile, sits above BottomNav */}
+        <div className="sm:static fixed bottom-[72px] left-0 right-0 sm:p-0 p-4 bg-paper-2/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none border-t border-line sm:border-0 z-40">
           <button
             onClick={handleAnalyze}
             disabled={!input.trim() && uploadedFiles.length === 0}
@@ -425,7 +425,8 @@ export default function BuyerPage() {
             <ArrowRight size={18} />
           </button>
         </div>
-        <div className="h-20 sm:hidden" />
+        {/* Spacer: button height (72px) + nav height (72px) */}
+        <div className="h-36 sm:hidden" />
 
         {/* Examples */}
         <div>
