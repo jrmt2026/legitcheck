@@ -1,0 +1,49 @@
+{
+  "name": "LegitCheck PH",
+  "short_name": "LegitCheck",
+  "description": "Check muna bago bayad. Anti-scam risk checker for Filipinos.",
+  "start_url": "/buyer",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0B0D11",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "en-PH",
+  "categories": ["finance", "utilities", "security"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "share_target": {
+    "action": "/buyer",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "shortcuts": [
+    {
+      "name": "Check something",
+      "short_name": "Check",
+      "description": "Start a new scam check",
+      "url": "/buyer",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Try a demo",
+      "short_name": "Demo",
+      "description": "Try a sample scam check",
+      "url": "/demo",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Scam SOS",
+      "short_name": "SOS",
+      "description": "Emergency — I may have been scammed",
+      "url": "/sos",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

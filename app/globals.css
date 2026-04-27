@@ -9,6 +9,7 @@
 
   html {
     font-size: 16px;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -26,89 +27,152 @@
 }
 
 @layer components {
-  .card {
-    @apply bg-paper border border-line rounded-2xl p-5;
-  }
+  /* ── Cards ──────────────────────────────────────────────────────────── */
+  .card    { @apply bg-paper border border-line rounded-2xl p-5; }
+  .card-sm { @apply bg-paper border border-line rounded-xl p-4; }
 
-  .card-sm {
-    @apply bg-paper border border-line rounded-xl p-4;
-  }
-
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
   .btn-ink {
     @apply w-full bg-ink text-white font-semibold rounded-xl py-4 px-5 text-base
            transition-all active:scale-[0.98] active:opacity-80 flex items-center justify-between;
   }
-
   .btn-outline {
     @apply w-full bg-paper text-ink font-normal rounded-xl py-4 px-5 text-base border border-line
            transition-all active:bg-paper-2 flex items-center justify-between;
   }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-ink text-white font-semibold
+           rounded-2xl px-6 py-3.5 text-base hover:opacity-90 active:scale-[0.98] transition-all;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 bg-paper text-ink font-medium
+           rounded-2xl px-6 py-3.5 text-base border border-line hover:bg-paper-2 active:scale-[0.98] transition-all;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 bg-brand-red text-white font-semibold
+           rounded-2xl px-5 py-3 text-sm hover:opacity-90 active:scale-[0.98] transition-all;
+  }
 
-  .verdict-green  { @apply bg-brand-green-light  border-brand-green/20; }
-  .verdict-yellow { @apply bg-brand-yellow-light border-brand-yellow/20; }
-  .verdict-red    { @apply bg-brand-red-light    border-brand-red/20; }
+  /* ── Verdict badges ─────────────────────────────────────────────────── */
+  .verdict-green    { @apply bg-brand-green-light    border-brand-green/20; }
+  .verdict-yellow   { @apply bg-brand-yellow-light   border-brand-yellow/20; }
+  .verdict-orange   { @apply bg-brand-orange-light   border-brand-orange/20; }
+  .verdict-red      { @apply bg-brand-red-light      border-brand-red/20; }
+  .verdict-critical { @apply bg-brand-critical-light border-brand-critical/20; }
 
-  .text-verdict-green  { @apply text-brand-green-dark; }
-  .text-verdict-yellow { @apply text-brand-yellow-dark; }
-  .text-verdict-red    { @apply text-brand-red-dark; }
+  .text-verdict-green    { @apply text-brand-green-dark; }
+  .text-verdict-yellow   { @apply text-brand-yellow-dark; }
+  .text-verdict-orange   { @apply text-brand-orange-dark; }
+  .text-verdict-red      { @apply text-brand-red-dark; }
+  .text-verdict-critical { @apply text-brand-critical-dark; }
 
+  /* ── Labels ──────────────────────────────────────────────────────────── */
   .sec-label {
     @apply text-xs font-semibold tracking-widest uppercase text-ink-3 mb-2 font-mono;
   }
+  .micro-label {
+    @apply text-[10px] font-semibold tracking-widest uppercase text-ink-3 font-mono;
+  }
 
-  /* Inputs */
+  /* ── Inputs ──────────────────────────────────────────────────────────── */
   .input-base {
     @apply w-full border border-line rounded-xl px-4 py-3.5 text-base text-ink bg-paper
            focus:outline-none focus:border-ink placeholder-ink-3 transition-colors;
   }
+
+  /* ── Risk hero backgrounds ──────────────────────────────────────────── */
+  .risk-hero-green    { background: linear-gradient(160deg, #E8F7F1 0%, #ffffff 60%); }
+  .risk-hero-yellow   { background: linear-gradient(160deg, #FEF3DC 0%, #ffffff 60%); }
+  .risk-hero-orange   { background: linear-gradient(160deg, #FEF0E4 0%, #fff8f5 60%); }
+  .risk-hero-red      { background: linear-gradient(160deg, #FEF0EF 0%, #fff5f5 60%); }
+  .risk-hero-critical { background: linear-gradient(160deg, #4A0E0E 0%, #7D1A1A 50%, #1a0505 100%); }
+
+  /* ── Gamification badges ─────────────────────────────────────────────── */
+  .badge        { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border; }
+  .badge-gold   { @apply bg-brand-gold-light   text-brand-gold-dark   border-brand-gold/30; }
+  .badge-purple { @apply bg-brand-purple-light text-brand-purple-dark border-brand-purple/30; }
+  .badge-green  { @apply bg-brand-green-light  text-brand-green-dark  border-brand-green/20; }
+  .badge-red    { @apply bg-brand-red-light    text-brand-red-dark    border-brand-red/20; }
+  .badge-teal   { @apply bg-brand-teal-light   text-brand-teal-dark   border-brand-teal/20; }
+  .badge-blue   { @apply bg-brand-blue-light   text-brand-blue-dark   border-brand-blue/20; }
 }
 
-/* Animations */
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
 @keyframes slideUp {
   from { transform: translateY(16px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-
 @keyframes slideDown {
   from { transform: translateY(-8px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
 @keyframes throb {
   0%, 100% { transform: scale(1);   opacity: 1;   }
   50%       { transform: scale(1.4); opacity: 0.5; }
 }
-
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
-
 @keyframes popIn {
   0%   { transform: scale(0.92); opacity: 0; }
   60%  { transform: scale(1.03); opacity: 1; }
   100% { transform: scale(1);    opacity: 1; }
 }
+@keyframes ringFill {
+  from { stroke-dashoffset: 251; }
+  to   { stroke-dashoffset: var(--ring-offset, 0); }
+}
+@keyframes dangerGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192,49,44,0); }
+  50%       { box-shadow: 0 0 24px 8px rgba(192,49,44,0.2); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes scaleIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
 
-.animate-slide-up   { animation: slideUp   0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-slide-down { animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-fade-in    { animation: fadeIn    0.3s ease-out forwards; }
+/* ── Animation utilities ─────────────────────────────────────────────────── */
+.animate-slide-up   { animation: slideUp   0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-slide-down { animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fade-in    { animation: fadeIn    0.35s ease-out both; }
 .animate-throb      { animation: throb     0.9s ease-in-out infinite; }
-.animate-pop-in     { animation: popIn     0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-pop-in     { animation: popIn     0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-ring       { animation: ringFill  1.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-glow       { animation: dangerGlow 2s ease-in-out infinite; }
+.animate-float      { animation: float     3s ease-in-out infinite; }
+.animate-scale-in   { animation: scaleIn   0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* Safe area padding for notched phones (iPhone X+) */
+/* Staggered children */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+
+/* ── Safe area ───────────────────────────────────────────────────────────── */
 .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 .pt-safe { padding-top:    max(0px,  env(safe-area-inset-top)); }
+.mb-safe { margin-bottom:  max(1rem, env(safe-area-inset-bottom)); }
 
-/* Skeleton loader */
+/* ── Skeleton ────────────────────────────────────────────────────────────── */
 .skeleton {
   background: linear-gradient(90deg, #f0f0ee 25%, #e4e4e2 50%, #f0f0ee 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: 8px;
 }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E4E4E2; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #6B7280; }
