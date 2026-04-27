@@ -129,42 +129,30 @@ export async function POST(req: Request) {
   const { text, images } = await req.json()
   let analysisText = text || ''
 
-  // ── 1. OCR: extract text from ALL images IN PARALLEL ────────────────────────
+  // ── 1. Prepare images — NO separate OCR call. Claude sees images directly. ───
+  // Doing OCR + analysis = 2 Claude calls = timeout on free Vercel (10s limit).
+  // Instead: send images straight to the main Claude call (it reads images natively).
   const imageContents: Array<{ type: 'image'; source: { type: 'base64'; media_type: ValidMediaType; data: string } }> = []
+  const hasImages = Array.isArray(images) && images.length > 0
 
-  if (Array.isArray(images) && images.length > 0) {
-    const imgList = images.slice(0, 4).map(img => ({
-      data: typeof img === 'string' ? img : img.data,
-      mime: typeof img === 'string' ? 'image/jpeg' : img.mimeType,
-    })).filter(i => i.data)
-
-    for (const i of imgList) {
-      imageContents.push({ type: 'image', source: { type: 'base64', media_type: toValidMediaType(i.mime), data: i.data } })
+  if (hasImages) {
+    for (const img of images.slice(0, 4)) {
+      const data = typeof img === 'string' ? img : img.data
+      const mime = typeof img === 'string' ? 'image/jpeg' : img.mimeType
+      if (data) imageContents.push({ type: 'image', source: { type: 'base64', media_type: toValidMediaType(mime), data } })
     }
-
-    // Run all OCR calls in parallel instead of sequentially
-    const ocrResults = await Promise.all(imgList.map(async i => {
-      try {
-        const ocr = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 800,
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: toValidMediaType(i.mime), data: i.data } },
-            { type: 'text', text: 'Extract ALL visible text from this image exactly as written. Include every word, number, link, name. Output only the raw extracted text, nothing else.' },
-          ]}],
-        })
-        return ocr.content[0].type === 'text' ? ocr.content[0].text : ''
-      } catch { return '' }
-    }))
-
-    const parts = ocrResults.filter(Boolean)
-    if (parts.length > 0) analysisText = parts.join('\n\n---\n\n') + (text ? '\n\nAdditional context: ' + text : '')
   }
 
-  if (!analysisText) return NextResponse.json({ error: 'No content to analyze' }, { status: 400 })
+  // Need at least text or images
+  if (!analysisText && imageContents.length === 0) {
+    return NextResponse.json({ error: 'No content to analyze' }, { status: 400 })
+  }
+
+  // For image-only submissions, use a placeholder so keyword engine has something
+  const textForKeywords = analysisText || '[Image submitted — see visual analysis]'
 
   // ── 2-4. Phones + scam DB + website + web search — ALL IN PARALLEL ───────────
-  const phones   = extractPhones(analysisText)
+  const phones     = extractPhones(analysisText)
   const fetchedUrl = extractUrl(analysisText)
   const searchQuery = buildSearchQuery(analysisText, fetchedUrl, phones)
 
@@ -193,8 +181,8 @@ export async function POST(req: Request) {
   ].filter(Boolean).join('\n')
 
   // ── 5b. Run keyword engine EARLY — inject findings into Claude's context ──────
-  const catIdEarly  = detectCategory(analysisText)
-  const sigIdsEarly = detectSignals(fullContext, catIdEarly)
+  const catIdEarly  = detectCategory(textForKeywords)
+  const sigIdsEarly = detectSignals(fullContext || textForKeywords, catIdEarly)
   if (!siteIsHttps && !sigIdsEarly.includes('no_https')) sigIdsEarly.push('no_https')
   const kwEarly = computeRisk(catIdEarly, sigIdsEarly)
 
@@ -216,7 +204,6 @@ export async function POST(req: Request) {
   let positiveIndicators: Array<{ en: string; tl: string; riskPoints: number; severity: any; id: string }> = []
   let scoreSteps: Array<{ label: string; delta: number }> = []
 
-  const hasImages = imageContents.length > 0
   const isWebsiteCheck = !!fetchedUrl
   const hasSearchResults = !!searchContext
 
@@ -349,15 +336,14 @@ ${hasSearchResults ? 'WEB SEARCH RESULTS ATTACHED — if results show news artic
 ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as a scammer by previous LegitCheck users. This is critical corroborating evidence.' : ''}`
 
   try {
-    // Build message content — include images if we have them for direct visual analysis
+    // Build message: images first, then text context
     const messageContent: any[] = []
 
-    // If we have images, include them directly for visual analysis alongside all context
-    if (hasImages && imageContents.length > 0) {
-      for (const img of imageContents) messageContent.push(img)
-    }
+    // Include all images directly — Claude reads them natively (no separate OCR needed)
+    for (const img of imageContents) messageContent.push(img)
 
-    messageContent.push({ type: 'text', text: `Analyze this for Philippine scam risk:\n\n${fullContext}${signalContext}` })
+    const contextText = fullContext || textForKeywords
+    messageContent.push({ type: 'text', text: `Analyze this for Philippine scam risk:\n\n${contextText}${signalContext}` })
 
     const aiResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -457,8 +443,8 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
   } catch (e) {
     console.error('Claude analysis error:', e)
     // Fallback: keyword engine runs as primary — still returns real findings
-    const catIdFb  = detectCategory(analysisText)
-    const sigIdsFb = detectSignals(analysisText, catIdFb)
+    const catIdFb  = detectCategory(textForKeywords)
+    const sigIdsFb = detectSignals(textForKeywords, catIdFb)
     const fallback = computeRisk(catIdFb, sigIdsFb)
     // Override score/color from keyword findings
     const fbTrustScore = 100 - fallback.score
