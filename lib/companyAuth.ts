@@ -49,11 +49,12 @@ export async function verifyApiKey(rawKey: string): Promise<{
 }
 
 export async function incrementApiUsage(keyId: string, currentCount: number, count = 1) {
-  await supabase
-    .from('api_keys')
-    .update({ requests_this_month: currentCount + count, last_used_at: new Date().toISOString() })
-    .eq('id', keyId)
-    .catch(() => null)
+  try {
+    await supabase
+      .from('api_keys')
+      .update({ requests_this_month: currentCount + count, last_used_at: new Date().toISOString() })
+      .eq('id', keyId)
+  } catch { /* silent */ }
 }
 
 // ── SEC / DTI auto-verification ───────────────────────────────────────────────
