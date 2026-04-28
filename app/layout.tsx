@@ -15,7 +15,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0B0D11',
+  themeColor: '#0D1B2A',
 }
 
 export const metadata: Metadata = {
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="top-center"
           toastOptions={{
             style: {
-              background: '#0B0D11',
+              background: '#0D1B2A',
               color: '#fff',
               borderRadius: '12px',
               fontSize: '13px',

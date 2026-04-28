@@ -235,6 +235,36 @@ export default function BuyerPage() {
         }).select('id').single()
         if (check) setSavedCheckId(check.id)
       } catch { /* silent — result already shown */ }
+
+      // Award points + badges (non-blocking)
+      try {
+        const session = await supabase.auth.getSession()
+        const token   = session.data.session?.access_token
+        if (token) {
+          const res = await fetch('/api/user/award-points', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body:    JSON.stringify({ categoryId: finalResult.categoryId, color: finalResult.color }),
+          })
+          if (res.ok) {
+            const gam = await res.json()
+            if (gam.newBadges?.length) {
+              const { default: toast } = await import('react-hot-toast')
+              gam.newBadges.forEach((id: string) => {
+                const labels: Record<string, string> = {
+                  first_check: '🛡️ Badge: First Check', scam_spotter: '🔍 Badge: Scam Spotter',
+                  phishing_defender: '📵 Badge: Phishing Defender', marketplace_guardian: '🛍️ Badge: Marketplace Guardian',
+                  ofw_ally: '✈️ Badge: OFW Safety Ally', donation_defender: '❤️ Badge: Donation Defender',
+                  investment_skeptic: '💰 Badge: Investment Skeptic', red_flag_master: '🏆 Badge: Red Flag Master',
+                  community_reporter: '🚩 Badge: Community Reporter', family_protector: '👨‍👩‍👧 Badge: Family Protector',
+                  verified_helper: '✅ Badge: Verified Helper',
+                }
+                toast.success(labels[id] ?? '🏅 New badge unlocked!', { duration: 4000 })
+              })
+            }
+          }
+        }
+      } catch { /* silent */ }
     }
   }
 

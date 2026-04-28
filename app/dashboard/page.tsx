@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Clock, ChevronRight, Settings } from 'lucide-react'
+import ScamShieldScore from '@/components/ScamShieldScore'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -18,7 +19,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, shield_score, checks_total, reports_total, streak_days, badges_earned')
     .eq('id', user.id)
     .single()
 
@@ -64,6 +65,15 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold text-ink tracking-tight">Hi, {firstName}.</h1>
           <p className="text-sm text-ink-3 mt-1">Check muna bago bayad. Safe ba 'to?</p>
         </div>
+
+        {/* Scam Shield Score */}
+        <ScamShieldScore
+          shieldScore={profile?.shield_score  ?? 0}
+          checksTotal={profile?.checks_total  ?? 0}
+          streakDays={profile?.streak_days    ?? 0}
+          badgesEarned={profile?.badges_earned ?? []}
+          reportsTotal={profile?.reports_total ?? 0}
+        />
 
         {/* Main CTA */}
         <Link href="/buyer" className="block bg-ink text-white rounded-2xl p-5 hover:opacity-90 active:scale-[0.98] transition-all group">

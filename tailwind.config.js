@@ -50,8 +50,8 @@ module.exports = {
           'teal-dark':  '#065F46',
         },
         ink: {
-          DEFAULT: '#0B0D11',
-          2: '#3A3D45',
+          DEFAULT: '#0D1B2A',   // deep navy/midnight blue
+          2: '#2C3A52',         // navy-tinted dark
           3: '#6B7280',
         },
         paper: {
