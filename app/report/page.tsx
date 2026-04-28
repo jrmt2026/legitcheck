@@ -136,6 +136,7 @@ export default function ReportPage() {
               Browse scam library
             </Link>
           </div>
+          <p className="text-xs text-white/20 mt-6">Produced by AntLab Academy</p>
         </div>
       </div>
     )
@@ -422,6 +423,7 @@ export default function ReportPage() {
         )}
 
         <div className="pb-8" />
+        <p className="text-xs text-ink-3 opacity-50 text-center pb-4">Produced by AntLab Academy</p>
       </div>
     </div>
   )

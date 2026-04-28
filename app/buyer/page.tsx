@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, ArrowRight, X, Loader2, ImagePlus, RotateCcw,
-  ShieldCheck, Lock, AlertTriangle, Clock, PlusCircle,
+  ShieldCheck, Lock, AlertTriangle, Clock,
 } from 'lucide-react'
 import AccountLookup from '@/components/AccountLookup'
 import { detectCategory, detectSignals, computeRisk } from '@/lib/decisionEngine'
@@ -91,6 +91,7 @@ export default function BuyerPage() {
   const [uploadedFiles, setUploadedFiles]         = useState<File[]>([])
   const [uploadedPreviews, setUploadedPreviews]   = useState<string[]>([])
   const [scanStep, setScanStep]                   = useState(0)
+  const [scanDone, setScanDone]                   = useState(false)
   const [result, setResult]                       = useState<DecisionResult | null>(null)
   const [scoreSteps, setScoreSteps]               = useState<Array<{ label: string; delta: number }>>([])
   const [savedCheckId, setSavedCheckId]           = useState<string | undefined>()
@@ -154,6 +155,7 @@ export default function BuyerPage() {
     setUploadedFiles([])
     setUploadedPreviews([])
     setScanStep(0)
+    setScanDone(false)
     setResult(null)
     setScoreSteps([])
     setSavedCheckId(undefined)
@@ -213,6 +215,9 @@ export default function BuyerPage() {
 
     setTier(resultTier)
     setResult(finalResult)
+    setScanStep(SCAN_STEPS.length) // mark all steps completed
+    setScanDone(true)              // show "Check complete" briefly
+    await new Promise(r => setTimeout(r, 700))
     setStep('result')
 
     if (user) {
@@ -292,16 +297,30 @@ export default function BuyerPage() {
           </Link>
         </header>
         <div className="flex-1 flex flex-col items-center justify-center px-4 gap-8 animate-fade-in">
-          <div className="relative">
-            <div className="w-20 h-20 rounded-full border-2 border-white/20 flex items-center justify-center">
-              <ShieldCheck size={32} className="text-white/60 animate-float" />
+          {scanDone ? (
+            <div className="flex flex-col items-center gap-4 animate-scale-in text-center">
+              <div className="w-20 h-20 rounded-full bg-brand-green/20 border-2 border-brand-green/30 flex items-center justify-center">
+                <ShieldCheck size={32} className="text-brand-green" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white mb-1">Check complete</p>
+                <p className="text-sm text-white/50">Your result is ready.</p>
+              </div>
             </div>
-            <div className="absolute -inset-2 rounded-full border border-white/20 animate-ping opacity-30" />
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-white mb-1">Analyzing your check…</p>
-            <p className="text-sm text-white/50 max-w-xs">Checking links, claims, report history, and suspicious details. This may take a few seconds.</p>
-          </div>
+          ) : (
+            <>
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full border-2 border-white/20 flex items-center justify-center">
+                  <ShieldCheck size={32} className="text-white/60 animate-float" />
+                </div>
+                <div className="absolute -inset-2 rounded-full border border-white/20 animate-ping opacity-30" />
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-white mb-1">Analyzing your check…</p>
+                <p className="text-sm text-white/50 max-w-xs">Checking links, claims, report history, and suspicious details. This may take a few seconds.</p>
+              </div>
+            </>
+          )}
           <div className="w-full max-w-xs space-y-2">
             {SCAN_STEPS.map((s, i) => (
               <div key={s} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border text-sm transition-all duration-300 ${
@@ -568,12 +587,6 @@ export default function BuyerPage() {
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-ink-3 hover:bg-paper-2 hover:text-ink transition-all"
                     >
                       <RotateCcw size={11} /> Recheck
-                    </Link>
-                    <Link
-                      href={`/buyer?recheck=${encodeURIComponent(check.input_text.slice(0, 500))}`}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-ink-3 hover:bg-paper-2 hover:text-ink transition-all"
-                    >
-                      <PlusCircle size={11} /> Add Evidence
                     </Link>
                   </div>
                 </div>

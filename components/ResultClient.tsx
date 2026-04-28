@@ -111,10 +111,10 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     accentText: 'text-white',
     flagBg: 'bg-paper-2',
     flagBorder: 'border-line',
-    label: 'No Public Red Flags',
+    label: 'No Public Reports Found',
     emoji: '🔍',
-    recommendation: 'No public red flags found — still verify carefully.',
-    recommendationTl: 'Walang nakitang red flag — mag-verify pa rin bago tumuloy.',
+    recommendation: 'No public reports found — still verify carefully.',
+    recommendationTl: 'Walang nakitang public report — mag-verify pa rin bago tumuloy.',
     headlinePrefix: '',
   },
 }
@@ -208,6 +208,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
 
   const redFlags  = result.reasons.filter(r => r.severity !== 'positive')
   const positives = result.reasons.filter(r => r.severity === 'positive')
+
+  const isInconclusive = riskLevel === 'caution' && redFlags.length === 0 && positives.length === 0
 
   const visibleRedFlags  = tier === 'guest' ? redFlags.slice(0, 1)  : tier === 'basic' ? redFlags.slice(0, 3)  : redFlags
   const visiblePositives = tier === 'guest' ? []                     : tier === 'basic' ? positives.slice(0, 2) : positives
@@ -306,10 +308,14 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
 
           {/* Risk level badge */}
           <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold mb-5 border ${
-            isCritical ? 'bg-white/15 border-white/25 text-white' : `${theme.accentBg} ${theme.accentText} border-transparent`
+            isCritical
+              ? 'bg-white/15 border-white/25 text-white'
+              : isInconclusive
+              ? 'bg-paper-2 border-line text-ink-2'
+              : `${theme.accentBg} ${theme.accentText} border-transparent`
           }`}>
-            <span>{theme.emoji}</span>
-            <span>{theme.label}</span>
+            <span>{isInconclusive ? '❓' : theme.emoji}</span>
+            <span>{isInconclusive ? 'Inconclusive' : theme.label}</span>
           </div>
 
           {/* Score ring */}
@@ -333,18 +339,31 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
 
           {/* Primary recommendation pill */}
           <div className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm ${
-            isCritical ? 'bg-white text-brand-critical' : `${theme.accentBg} ${theme.accentText}`
+            isCritical
+              ? 'bg-white text-brand-critical'
+              : isInconclusive
+              ? 'bg-ink/10 text-ink-2 border border-line'
+              : `${theme.accentBg} ${theme.accentText}`
           }`}>
             <Zap size={14} />
-            {lang === 'tl' ? theme.recommendationTl : theme.recommendation}
+            {isInconclusive
+              ? (lang === 'tl' ? 'Inconclusive — kailangan ng manual na pag-verify.' : 'Inconclusive — manual verification needed.')
+              : (lang === 'tl' ? theme.recommendationTl : theme.recommendation)}
           </div>
 
           {/* Context note below recommendation */}
-          {riskLevel === 'safe' && (
+          {isInconclusive && (
             <p className="mt-3 text-xs text-ink-3 max-w-xs mx-auto leading-relaxed">
               {lang === 'tl'
-                ? 'Walang nakitang public na red flag. Hindi ito ibig sabihin na ligtas. Mag-verify pa rin bago magpadala ng pera.'
-                : 'No public red flags found. This does not mean it is safe or legitimate. Verify the person, transaction, and payment details before sending money.'}
+                ? 'Hindi namin ma-confirm kung ligtas ito. Mag-verify sa opisyal na mapagkukunan bago tumuloy.'
+                : 'We could not confirm whether this is safe. Please verify through official sources before proceeding.'}
+            </p>
+          )}
+          {!isInconclusive && riskLevel === 'safe' && (
+            <p className="mt-3 text-xs text-ink-3 max-w-xs mx-auto leading-relaxed">
+              {lang === 'tl'
+                ? 'Walang nakitang public na report. Hindi ito ibig sabihin na ligtas. Mag-verify pa rin bago magpadala ng pera.'
+                : 'No public reports found. This does not mean it is safe or legitimate. Verify the person, transaction, and payment details before sending money.'}
             </p>
           )}
           {riskLevel === 'high' && (
@@ -815,14 +834,6 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
             </Link>
           </div>
 
-          {checkId && (
-            <Link
-              href={`/buyer?addEvidence=${checkId}&recheck=${encodeURIComponent(inputText.slice(0, 500))}`}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-dashed border-ink-3 bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
-              <TrendingDown size={14} />
-              {lang === 'tl' ? 'Magdagdag ng ebidensya at i-recheck' : 'Add evidence & recheck'}
-            </Link>
-          )}
         </div>
 
         <ReportScamModal
