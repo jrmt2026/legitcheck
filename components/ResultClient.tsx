@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, Copy, Check, MessageCircle, ExternalLink,
@@ -104,17 +104,17 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     headlinePrefix: '',
   },
   safe: {
-    bg: 'risk-hero-green',
-    border: 'border-brand-green/20',
-    scoreColor: 'text-brand-green-dark',
-    accentBg: 'bg-brand-green',
+    bg: 'risk-hero-neutral',
+    border: 'border-line',
+    scoreColor: 'text-ink-2',
+    accentBg: 'bg-ink',
     accentText: 'text-white',
-    flagBg: 'bg-brand-green-light',
-    flagBorder: 'border-brand-green/20',
-    label: 'Low Risk',
-    emoji: '✅',
-    recommendation: 'No major red flags found.',
-    recommendationTl: 'Walang nakitang malaking red flag.',
+    flagBg: 'bg-paper-2',
+    flagBorder: 'border-line',
+    label: 'No Public Red Flags',
+    emoji: '🔍',
+    recommendation: 'No public red flags found — still verify carefully.',
+    recommendationTl: 'Walang nakitang red flag — mag-verify pa rin bago tumuloy.',
     headlinePrefix: '',
   },
 }
@@ -145,24 +145,9 @@ function parseFinding(text: string): { observation: string; reason: string } | n
 }
 
 function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }) {
-  const [displayed, setDisplayed] = useState(0)
   const radius = 54
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (score / 100) * circumference
-
-  useEffect(() => {
-    let frame: number
-    const start = performance.now()
-    const duration = 1200
-    const animate = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setDisplayed(Math.round(score * eased))
-      if (progress < 1) frame = requestAnimationFrame(animate)
-    }
-    frame = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(frame)
-  }, [score])
 
   const isCritical = riskLevel === 'critical'
   const strokeColor = {
@@ -170,7 +155,7 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
     high:     '#C0312C',
     caution:  '#D4650A',
     low:      '#C47B0A',
-    safe:     '#1A9968',
+    safe:     '#6b7280',
   }[riskLevel]
 
   return (
@@ -190,12 +175,12 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)' }}
+          style={{ transition: 'stroke-dashoffset 0.4s cubic-bezier(0.16,1,0.3,1)' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={`text-4xl font-bold font-mono leading-none ${isCritical ? 'text-white' : RISK_THEMES[riskLevel].scoreColor}`}>
-          {displayed}
+          {score}
         </span>
         <span className={`text-xs font-mono ${isCritical ? 'text-white/60' : 'text-ink-3'}`}>/100</span>
       </div>
@@ -311,6 +296,14 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
       <div className={`${theme.bg} px-4 py-10 text-center ${isCritical ? 'animate-glow' : ''}`}>
         <div className="max-w-lg mx-auto">
 
+          {/* Check complete status */}
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-4 border ${
+            isCritical ? 'bg-white/15 border-white/25 text-white' : 'bg-paper border-line text-ink-2'
+          }`}>
+            <CheckCircle2 size={14} />
+            Check complete — your result is ready
+          </div>
+
           {/* Risk level badge */}
           <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold mb-5 border ${
             isCritical ? 'bg-white/15 border-white/25 text-white' : `${theme.accentBg} ${theme.accentText} border-transparent`
@@ -320,8 +313,14 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
 
           {/* Score ring */}
-          <div className="flex justify-center mb-5 animate-scale-in">
+          <div className="flex flex-col items-center mb-5 animate-scale-in">
             <ScoreRing score={trustScore} riskLevel={riskLevel} />
+            <p className={`text-xs font-medium mt-2 ${isCritical ? 'text-white/50' : 'text-ink-3'}`}>
+              Final Safety Score · {trustScore < 50 ? 'Lower = higher scam risk' : 'Higher = lower scam risk'}
+            </p>
+            <p className={`text-[11px] mt-0.5 font-medium ${isCritical ? 'text-white/40' : 'text-ink-3'}`}>
+              This is your final result.
+            </p>
           </div>
 
           {/* Headline */}
@@ -342,10 +341,10 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
 
           {/* Context note below recommendation */}
           {riskLevel === 'safe' && (
-            <p className="mt-3 text-xs text-brand-green-dark opacity-60">
+            <p className="mt-3 text-xs text-ink-3 max-w-xs mx-auto leading-relaxed">
               {lang === 'tl'
-                ? 'Hindi ito garantiya ng kaligtasan. Mag-verify pa rin bago tumuloy.'
-                : 'This looks low risk based on what you shared, but always stay cautious.'}
+                ? 'Walang nakitang public na red flag. Hindi ito ibig sabihin na ligtas. Mag-verify pa rin bago magpadala ng pera.'
+                : 'No public red flags found. This does not mean it is safe or legitimate. Verify the person, transaction, and payment details before sending money.'}
             </p>
           )}
           {riskLevel === 'high' && (
@@ -382,6 +381,46 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
       {/* ── Analysis body ─────────────────────────────────────────────────── */}
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4 animate-slide-up">
 
+        {/* Classification tags */}
+        <div className="flex flex-wrap gap-2">
+          {result.categoryId && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-paper border border-line rounded-full text-xs text-ink-3 font-medium">
+              <Search size={10} />
+              Detected: {({
+                online_purchase: 'Seller / Marketplace',
+                sms_text:        'SMS / Text Message',
+                job_agency:      'Job / OFW Offer',
+                investment:      'Investment Offer',
+                donation:        'Donation / Charity',
+                website_check:   'Website / Link',
+                loan_scam:       'Loan Offer',
+                romance_scam:    'Romance / Relationship',
+                property:        'Property / Land',
+                buyer_check:     'Buyer Check',
+                profile_check:   'Social Profile',
+                vendor:          'Vendor / Business',
+              }[result.categoryId] ?? result.categoryId)}
+            </span>
+          )}
+          {redFlags.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-red-light border border-brand-red/20 rounded-full text-xs text-brand-red-dark font-medium">
+              <AlertTriangle size={10} />
+              {redFlags.length} red flag{redFlags.length !== 1 ? 's' : ''} found
+            </span>
+          )}
+          {redFlags.length === 0 && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-yellow-light border border-brand-yellow/30 rounded-full text-xs text-brand-yellow-dark font-medium">
+              <AlertTriangle size={10} />
+              No public reports — verify carefully
+            </span>
+          )}
+          {result.isHardRed && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-red-light border border-brand-red/20 rounded-full text-xs text-brand-red-dark font-bold">
+              Critical red flag
+            </span>
+          )}
+        </div>
+
         {/* What was analyzed */}
         {entitySummary && (
           <div className="card flex gap-3 items-start">
@@ -400,7 +439,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
               {lang === 'tl' ? 'Pangunahing Natuklasan' : 'Main conclusion'}
             </p>
             <p className={`text-sm font-semibold leading-snug ${
-              riskLevel === 'safe' ? 'text-brand-green-dark' :
+              riskLevel === 'safe' ? 'text-ink-2' :
               riskLevel === 'critical' || riskLevel === 'high' ? 'text-brand-red-dark' :
               riskLevel === 'caution' ? 'text-brand-orange-dark' :
               'text-brand-yellow-dark'
@@ -639,9 +678,9 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
             {(riskLevel === 'low' || riskLevel === 'safe') && (
               <div className="space-y-2">
                 {[
-                  { en: 'Looks generally okay, but still verify before sending money.', tl: 'Mukhang okay sa pangkalahatan, pero mag-verify pa rin bago magpadala ng pera.' },
+                  { en: 'No major red flags found — but still verify before sending money.', tl: 'Walang malaking red flag — pero mag-verify pa rin bago magpadala ng pera.' },
                   { en: 'Use a payment method with buyer protection (Shopee, Lazada, COD).', tl: 'Gumamit ng paraan ng bayad na may buyer protection (Shopee, Lazada, COD).' },
-                  { en: 'This score is guidance only — not a guarantee of safety.', tl: 'Gabay lamang ang score na ito — hindi garantiya ng kaligtasan.' },
+                  { en: 'This result is guidance only — not a guarantee of safety.', tl: 'Gabay lamang ang resultang ito — hindi garantiya ng kaligtasan.' },
                 ].map((s, i) => (
                   <div key={i} className="flex gap-2.5 items-start">
                     <div className="w-5 h-5 rounded-full bg-brand-green-light border border-brand-green/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -721,6 +760,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
               ? 'Gabay lang ito. Hindi ito final legal, bank, platform, government, o law-enforcement decision. Mag-verify pa rin bago tumuloy.'
               : 'This is a guide only. Not a final legal, bank, platform, government, or law-enforcement decision. Verify further before proceeding.'}
           </p>
+          <p className="text-[11px] text-ink-3 mt-2 opacity-60">Produced by AntLab Academy</p>
         </div>
 
         {/* Action buttons */}
@@ -761,11 +801,28 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
             </>
           )}
 
-          <Link href="/buyer"
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
-            <Search size={14} />
-            {lang === 'tl' ? 'Mag-check ng isa pa' : 'Check something else'}
-          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link href="/buyer"
+              className="flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
+              <Search size={14} />
+              {lang === 'tl' ? 'Bagong check' : 'New check'}
+            </Link>
+            <Link
+              href={`/buyer?recheck=${encodeURIComponent(inputText.slice(0, 500))}`}
+              className="flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
+              <RotateCcw size={14} />
+              {lang === 'tl' ? 'Mag-recheck' : 'Recheck'}
+            </Link>
+          </div>
+
+          {checkId && (
+            <Link
+              href={`/buyer?addEvidence=${checkId}&recheck=${encodeURIComponent(inputText.slice(0, 500))}`}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-dashed border-ink-3 bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
+              <TrendingDown size={14} />
+              {lang === 'tl' ? 'Magdagdag ng ebidensya at i-recheck' : 'Add evidence & recheck'}
+            </Link>
+          )}
         </div>
 
         <ReportScamModal

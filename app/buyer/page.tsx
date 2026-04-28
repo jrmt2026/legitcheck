@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, ArrowRight, X, Loader2, ImagePlus, RotateCcw,
-  ShieldCheck, Lock, AlertTriangle, Clock, Check, UserPlus,
+  ShieldCheck, Lock, AlertTriangle, Clock, PlusCircle,
 } from 'lucide-react'
 import AccountLookup from '@/components/AccountLookup'
 import { detectCategory, detectSignals, computeRisk } from '@/lib/decisionEngine'
@@ -39,12 +39,12 @@ const EXAMPLES = [
 ]
 
 const SCAN_STEPS = [
-  'Reading content…',
-  'Checking links and payment accounts…',
-  'Looking for urgency pressure…',
-  'Comparing with known scam patterns…',
-  'Computing trust score…',
-  'Preparing your report…',
+  'Analyzing scam signals…',
+  'Checking links, claims, and payment details…',
+  'Looking for urgency and pressure tactics…',
+  'Comparing with known Filipino scam patterns…',
+  'Cross-referencing available report history…',
+  'Generating your safety report…',
 ]
 
 function fileToBase64(file: File): Promise<{ data: string; mimeType: string }> {
@@ -59,7 +59,7 @@ function fileToBase64(file: File): Promise<{ data: string; mimeType: string }> {
   })
 }
 
-type Step = 'input' | 'analyzing' | 'result' | 'signup_wall' | 'upgrade_wall'
+type Step = 'input' | 'analyzing' | 'result'
 type Tab  = 'check' | 'history'
 
 interface HistoryCheck {
@@ -102,8 +102,10 @@ export default function BuyerPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const shared = [params.get('text'), params.get('url'), params.get('title')].filter(Boolean).join('\n')
-    if (shared) setInput(shared)
+    const shared  = [params.get('text'), params.get('url'), params.get('title')].filter(Boolean).join('\n')
+    const recheck = params.get('recheck')
+    if (shared)  setInput(shared)
+    if (recheck) setInput(decodeURIComponent(recheck))
 
     createClient().auth.getUser().then(({ data: { user } }) => setIsAuth(!!user))
   }, [])
@@ -258,61 +260,6 @@ export default function BuyerPage() {
     }
   }
 
-  // ── Signup wall ────────────────────────────────────────────────────────────
-  if (step === 'signup_wall') {
-    return (
-      <div className="min-h-screen bg-ink flex flex-col items-center justify-center px-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mb-5">
-          <ShieldCheck size={28} className="text-brand-green" />
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-2">See the full report</h1>
-        <p className="text-white/60 text-sm mb-8 max-w-xs leading-relaxed">
-          You've used your free guest check. Sign up free to get 1 more check with a detailed analysis.
-        </p>
-        <div className="w-full max-w-xs space-y-3">
-          <Link href="/auth/signup" className="w-full bg-brand-green text-white font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-            <UserPlus size={16} /> Create free account
-          </Link>
-          <Link href="/auth/login" className="w-full bg-white/10 text-white font-semibold rounded-2xl py-3.5 flex items-center justify-center hover:bg-white/20 transition-all text-sm">
-            Log in to existing account
-          </Link>
-        </div>
-        <button onClick={reset} className="mt-8 text-xs text-white/30 hover:text-white/60 transition-colors">
-          ← Try a different check
-        </button>
-      </div>
-    )
-  }
-
-  // ── Upgrade wall ───────────────────────────────────────────────────────────
-  if (step === 'upgrade_wall') {
-    return (
-      <div className="min-h-screen bg-ink flex flex-col items-center justify-center px-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-5">
-          <Lock size={24} className="text-white/60" />
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-2">Free check used</h1>
-        <p className="text-white/60 text-sm mb-6 max-w-xs leading-relaxed">
-          You've used your free account check. Upgrade to Pro for unlimited checks with full reports.
-        </p>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 max-w-xs w-full text-left space-y-2.5">
-          {['Unlimited checks', 'Full AI analysis', 'Score breakdown', 'History & reports', 'Priority support'].map(f => (
-            <div key={f} className="flex items-center gap-2.5 text-sm text-white/70">
-              <Check size={13} className="text-brand-green flex-shrink-0" />
-              {f}
-            </div>
-          ))}
-        </div>
-        <button disabled className="w-full max-w-xs bg-brand-green/40 text-white/50 font-bold rounded-2xl py-4 mb-3 cursor-not-allowed text-sm">
-          Upgrade to Pro — coming soon
-        </button>
-        <button onClick={reset} className="text-sm text-white/40 hover:text-white/70 transition-colors">
-          ← Back
-        </button>
-      </div>
-    )
-  }
-
   // ── Result screen ──────────────────────────────────────────────────────────
   if (step === 'result' && result) {
     return (
@@ -352,8 +299,8 @@ export default function BuyerPage() {
             <div className="absolute -inset-2 rounded-full border border-white/20 animate-ping opacity-30" />
           </div>
           <div className="text-center">
-            <p className="text-xl font-bold text-white mb-1">Analyzing…</p>
-            <p className="text-sm text-white/50">Checking for red flags</p>
+            <p className="text-xl font-bold text-white mb-1">Analyzing your check…</p>
+            <p className="text-sm text-white/50 max-w-xs">Checking links, claims, report history, and suspicious details. This may take a few seconds.</p>
           </div>
           <div className="w-full max-w-xs space-y-2">
             {SCAN_STEPS.map((s, i) => (
@@ -434,11 +381,9 @@ export default function BuyerPage() {
           <div>
             <h1 className="text-2xl font-bold text-ink tracking-tight">Safe ba 'to? Check muna.</h1>
             <p className="text-sm text-ink-3 mt-1">
-              Paste a message, link, account number, seller profile, or upload a screenshot.
+              Paste a suspicious message, link, account number, seller profile, or upload a screenshot.
             </p>
           </div>
-
-          <AccountLookup />
 
           {error && (
             <div className="bg-brand-red-light border border-brand-red/20 text-brand-red-dark text-sm rounded-2xl px-4 py-3 flex items-start gap-2">
@@ -447,45 +392,43 @@ export default function BuyerPage() {
             </div>
           )}
 
-          {/* Category pills — horizontal scroll */}
+          {/* Main unified input */}
           <div>
-            <p className="sec-label">What are you checking?</p>
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="I-paste dito ang message, URL, number, profile link, o kahit anong kahina-hinala.&#10;&#10;Examples: GCash number · suspicious SMS · seller profile · investment offer · website link"
+              rows={7}
+              className="w-full border-2 border-line rounded-2xl px-4 py-4 text-base text-ink bg-paper focus:outline-none focus:border-ink placeholder-ink-3 transition-colors resize-none leading-relaxed"
+            />
+            <div className="mt-2 flex items-start gap-2 bg-paper-2 border border-line rounded-xl px-3 py-2.5">
+              <Lock size={12} className="text-ink-3 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-ink-3 leading-snug">
+                <strong className="text-ink-2">Do not paste OTPs, PINs, passwords, or full card numbers.</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Optional: narrow down the type */}
+          <div>
+            <p className="text-xs text-ink-3 font-medium mb-2 flex items-center gap-1.5">
+              <span className="bg-line text-ink-3 px-1.5 py-0.5 rounded text-[10px] font-bold">OPTIONAL</span>
+              What type is this? (auto-detected if blank)
+            </p>
             <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
               {CATEGORIES.map(c => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategory(prev => prev === c.id ? null : c.id)}
-                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl border transition-all min-w-[68px] ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all text-xs font-medium whitespace-nowrap ${
                     selectedCategory === c.id
                       ? 'border-ink bg-ink text-white'
-                      : 'border-line bg-paper hover:border-ink-3 hover:bg-paper-2'
+                      : 'border-line bg-paper hover:border-ink-3 text-ink-2'
                   }`}
                 >
-                  <span className="text-lg">{c.icon}</span>
-                  <span className={`text-[10px] leading-tight font-medium text-center ${
-                    selectedCategory === c.id ? 'text-white' : 'text-ink-2'
-                  }`}>{c.label}</span>
+                  <span>{c.icon}</span> {c.label}
                 </button>
               ))}
-            </div>
-            <p className="text-xs text-ink-3 mt-1.5">Auto-detected — tap to set manually.</p>
-          </div>
-
-          {/* Text input */}
-          <div>
-            <p className="sec-label">Paste message, link, or account number</p>
-            <textarea
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Paste a chat conversation, seller message, investment offer, suspicious SMS, website URL, or account number…"
-              rows={6}
-              className="w-full border border-line rounded-2xl px-4 py-3.5 text-base text-ink bg-paper focus:outline-none focus:border-ink placeholder-ink-3 transition-colors resize-none leading-relaxed"
-            />
-            <div className="mt-2 flex items-start gap-2 bg-paper-2 border border-line rounded-xl px-3 py-2.5">
-              <Lock size={12} className="text-ink-3 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-ink-3 leading-snug">
-                <strong className="text-ink-2">Do not paste OTPs, wallet PINs, bank passwords, or full card numbers.</strong>
-              </p>
             </div>
           </div>
 
@@ -598,22 +541,42 @@ export default function BuyerPage() {
           ) : (
             <div className="space-y-3">
               {history.map(check => (
-                <Link
-                  key={check.id}
-                  href={`/result/${check.id}`}
-                  className="flex items-center gap-3 bg-paper border border-line rounded-2xl px-4 py-3.5 hover:bg-paper-2 transition-all group"
-                >
-                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 ${COLOR_BADGE[check.color] ?? 'bg-paper-2 text-ink-2'}`}>
-                    {COLOR_LABEL[check.color] ?? check.color}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">{check.input_text.slice(0, 60)}…</p>
-                    <p className="text-xs text-ink-3 mt-0.5">
-                      {new Date(check.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </p>
+                <div key={check.id} className="bg-paper border border-line rounded-2xl overflow-hidden">
+                  <div className="flex items-start gap-3 px-4 pt-3.5 pb-3">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 mt-0.5 ${COLOR_BADGE[check.color] ?? 'bg-paper-2 text-ink-2'}`}>
+                      {COLOR_LABEL[check.color] ?? check.color}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink leading-snug line-clamp-2">{check.input_text.slice(0, 80)}{check.input_text.length > 80 ? '…' : ''}</p>
+                      <p className="text-xs text-ink-3 mt-0.5">
+                        {new Date(check.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <Link href={`/result/${check.id}`} className="text-ink-3 hover:text-ink transition-colors flex-shrink-0 mt-0.5">
+                      <ArrowRight size={16} />
+                    </Link>
                   </div>
-                  <ArrowRight size={16} className="text-ink-3 flex-shrink-0 group-hover:text-ink transition-colors" />
-                </Link>
+                  <div className="flex border-t border-line divide-x divide-line">
+                    <Link
+                      href={`/result/${check.id}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-ink-3 hover:bg-paper-2 hover:text-ink transition-all"
+                    >
+                      View Report
+                    </Link>
+                    <Link
+                      href={`/buyer?recheck=${encodeURIComponent(check.input_text.slice(0, 500))}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-ink-3 hover:bg-paper-2 hover:text-ink transition-all"
+                    >
+                      <RotateCcw size={11} /> Recheck
+                    </Link>
+                    <Link
+                      href={`/buyer?recheck=${encodeURIComponent(check.input_text.slice(0, 500))}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-ink-3 hover:bg-paper-2 hover:text-ink transition-all"
+                    >
+                      <PlusCircle size={11} /> Add Evidence
+                    </Link>
+                  </div>
+                </div>
               ))}
             </div>
           )}

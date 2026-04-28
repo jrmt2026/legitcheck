@@ -86,6 +86,7 @@
   .risk-hero-orange   { background: linear-gradient(160deg, #FEF0E4 0%, #fff8f5 60%); }
   .risk-hero-red      { background: linear-gradient(160deg, #FEF0EF 0%, #fff5f5 60%); }
   .risk-hero-critical { background: linear-gradient(160deg, #4A0E0E 0%, #7D1A1A 50%, #1a0505 100%); }
+  .risk-hero-neutral  { background: linear-gradient(160deg, #F1F3F6 0%, #ffffff 60%); }
 
   /* ── Gamification badges ─────────────────────────────────────────────── */
   .badge        { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border; }

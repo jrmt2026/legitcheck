@@ -235,6 +235,27 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* ── For Suppliers & Businesses ──────────────────────────────────────── */}
+        <section className="bg-paper py-10 border-t border-line">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="bg-ink/5 border border-line rounded-2xl px-6 py-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-ink/10 border border-line flex items-center justify-center flex-shrink-0">
+                <Building2 size={20} className="text-ink-3" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-ink mb-0.5">For Suppliers and Businesses</p>
+                <p className="text-sm text-ink-3 leading-snug">
+                  Need to check buyers, sellers, or suspicious payment accounts?{' '}
+                  Supplier and business access is coming soon.{' '}
+                  <Link href="/auth/company-signup" className="text-ink underline hover:opacity-70 transition-opacity">
+                    Register your business →
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── Final CTA ───────────────────────────────────────────────────────── */}
         <section className="bg-ink py-16 text-center">
           <div className="max-w-2xl mx-auto px-4">
@@ -301,6 +322,7 @@ export default async function HomePage() {
             <span className="font-bold text-white/70">LegitCheck PH</span>
             <span>· Check muna bago bayad. · © {new Date().getFullYear()}</span>
           </div>
+          <p className="text-white/20 text-xs mt-2">Produced by AntLab Academy</p>
         </div>
       </footer>
 

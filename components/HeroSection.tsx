@@ -7,7 +7,7 @@ import { ShieldCheck, Search, ArrowRight, Lock, CheckCircle, Zap } from 'lucide-
 const LIVE_FEED = [
   { emoji: '🛍️', label: 'FB Seller',     result: 'SCAM',      color: 'text-red-400',   bg: 'bg-red-500/10 border-red-500/20'   },
   { emoji: '📱', label: "Gov't SMS",      result: 'SCAM',      color: 'text-red-400',   bg: 'bg-red-500/10 border-red-500/20'   },
-  { emoji: '✅', label: 'Online Order',  result: 'SAFE',      color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20' },
+  { emoji: '✅', label: 'Online Order',  result: 'LOW RISK',  color: 'text-white/60',  bg: 'bg-white/5 border-white/15'          },
   { emoji: '💰', label: 'Investment',    result: 'SCAM',      color: 'text-red-400',   bg: 'bg-red-500/10 border-red-500/20'   },
   { emoji: '✈️', label: 'Job Agency',    result: 'SCAM',      color: 'text-red-400',   bg: 'bg-red-500/10 border-red-500/20'   },
   { emoji: '🌐', label: 'Website Link',  result: 'CAUTION',   color: 'text-yellow-400',bg: 'bg-yellow-500/10 border-yellow-500/20' },

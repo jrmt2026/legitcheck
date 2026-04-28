@@ -9,8 +9,9 @@ import type { DecisionResult } from '@/types'
 import ResultClient from '@/components/ResultClient'
 
 export default function ResultPage({ params }: { params: { id: string } }) {
-  const [result, setResult] = useState<DecisionResult | null>(null)
-  const [checkId, setCheckId] = useState('')
+  const [result, setResult]       = useState<DecisionResult | null>(null)
+  const [checkId, setCheckId]     = useState('')
+  const [inputText, setInputText] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function ResultPage({ params }: { params: { id: string } }) {
 
       setResult(check.result as DecisionResult)
       setCheckId(check.id)
+      setInputText(check.input_text || '')
     }
     load()
   }, [params.id, router])
@@ -42,5 +44,5 @@ export default function ResultPage({ params }: { params: { id: string } }) {
     )
   }
 
-  return <ResultClient result={result} checkId={checkId} />
+  return <ResultClient result={result} checkId={checkId} inputText={inputText} />
 }
