@@ -17,8 +17,16 @@ const PLAN_CREDITS: Record<string, number> = {
 
 export async function POST(req: Request) {
   try {
+    // Verify shared webhook secret to reject forged requests
+    const secret = process.env.MAYA_WEBHOOK_SECRET
+    if (secret) {
+      const incoming = req.headers.get('x-webhook-secret')
+      if (incoming !== secret) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
     const payload = await req.json()
-    console.log('Maya webhook:', JSON.stringify(payload, null, 2))
 
     const status  = payload?.status
     const refNo   = payload?.requestReferenceNumber

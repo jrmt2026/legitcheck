@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   // Generate new token
-  const token = nanoid(12)
+  const token = nanoid(21)
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
 
   const { error } = await supabase.from('share_links').insert({

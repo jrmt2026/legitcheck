@@ -23,15 +23,25 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect dashboard routes
+  const pathname = request.nextUrl.pathname
+
+  // Protect authenticated-only routes
   const protectedPaths = ['/dashboard', '/buyer', '/seller', '/result']
-  const isProtected = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p))
+  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
-    url.searchParams.set('redirectTo', request.nextUrl.pathname)
+    url.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(url)
+  }
+
+  // Protect /admin — only allow whitelisted emails
+  if (pathname.startsWith('/admin')) {
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)
+    if (!user || !adminEmails.includes(user.email || '')) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
 
   return supabaseResponse
