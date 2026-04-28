@@ -97,12 +97,7 @@ export interface UserProfile {
 
 // ─── Agents ────────────────────────────────────────────────────────────────────
 
-export type AgentRole =
-  | 'fraud_detector'
-  | 'qa_engineer'
-  | 'cpo'
-  | 'cmo'
-  | 'product_designer'
+export type AgentRole = 'bantay'
 
 export interface AgentMessage {
   role: 'user' | 'assistant'

@@ -135,16 +135,7 @@ export async function POST(req: Request) {
 
   if (token) {
     const { data: { user } } = await supabase.auth.getUser(token)
-    if (user) {
-      const { count } = await supabase
-        .from('checks')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-      if ((count ?? 0) >= 1) {
-        return NextResponse.json({ error: 'upgrade_required', checksUsed: count ?? 0 }, { status: 402 })
-      }
-      tier = 'basic'
-    }
+    if (user) tier = 'full'
   }
 
   let analysisText = text || ''

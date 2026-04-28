@@ -737,13 +737,27 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
 
               {checkId && <ShareButton checkId={checkId} lang={lang} />}
 
-              {checkId && (
-                <Link href={`/dashboard/agents?checkId=${checkId}`}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
-                  <MessageCircle size={14} />
-                  {lang === 'tl' ? 'Kausapin ang FraudGuard AI' : 'Talk to FraudGuard AI'}
-                </Link>
-              )}
+              <button
+                onClick={() => window.print()}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95"
+              >
+                <ExternalLink size={14} />
+                {lang === 'tl' ? 'I-download bilang PDF' : 'Download as PDF'}
+              </button>
+
+              <button
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400')}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition-all active:scale-95"
+              >
+                <Share2 size={14} />
+                {lang === 'tl' ? 'I-share sa Facebook' : 'Share on Facebook'}
+              </button>
+
+              <Link href="/dashboard/agents"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-line bg-paper text-sm text-ink-2 font-medium hover:bg-ink hover:text-white hover:border-ink transition-all active:scale-95">
+                <MessageCircle size={14} />
+                {lang === 'tl' ? 'Tanungin si Bantay' : 'Ask Bantay'}
+              </Link>
             </>
           )}
 

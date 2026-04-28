@@ -166,11 +166,6 @@ export default function BuyerPage() {
     const { data: { session } } = await supabase.auth.getSession()
     const user = session?.user ?? null
 
-    if (!user && localStorage.getItem('lc_guest_used')) {
-      setStep('signup_wall')
-      return
-    }
-
     setStep('analyzing')
     setError('')
 
@@ -193,10 +188,6 @@ export default function BuyerPage() {
         headers: reqHeaders,
         body: JSON.stringify({ text: input, images, categoryHint: selectedCategory }),
       })
-      if (res.status === 402) {
-        setStep('upgrade_wall')
-        return
-      }
       const data = await res.json()
       if (res.ok) {
         finalResult    = data.result
@@ -218,7 +209,6 @@ export default function BuyerPage() {
       }
     }
 
-    if (!user) localStorage.setItem('lc_guest_used', '1')
     setTier(resultTier)
     setResult(finalResult)
     setStep('result')

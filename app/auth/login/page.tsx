@@ -105,6 +105,11 @@ function LoginForm() {
             No account yet?{' '}
             <Link href="/auth/signup" className="text-ink font-semibold hover:underline">Sign up free</Link>
           </p>
+          <div>
+            <Link href="/auth/company-signup" className="text-xs text-ink-3 hover:text-ink transition-colors">
+              Business account? Sign up here →
+            </Link>
+          </div>
           <p className="text-xs text-ink-3">
             <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
             {' · '}
@@ -112,8 +117,7 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* Guest option */}
-        <div className="mt-6 text-center">
+        <div className="mt-4 text-center">
           <Link href="/buyer" className="text-xs text-ink-3 hover:text-ink transition-colors">
             Continue without account →
           </Link>

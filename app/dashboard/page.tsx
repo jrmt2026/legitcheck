@@ -149,6 +149,11 @@ export default async function DashboardPage() {
               <div className="text-sm font-semibold text-ink">Scam library</div>
               <div className="text-xs text-ink-3">Learn what to watch for</div>
             </Link>
+            <Link href="/dashboard/agents" className="flex flex-col gap-1.5 bg-paper border border-line rounded-2xl p-4 hover:border-ink-3 hover:bg-paper-2 transition-all col-span-2">
+              <span className="text-2xl">🛡️</span>
+              <div className="text-sm font-semibold text-ink">Ask Bantay</div>
+              <div className="text-xs text-ink-3">Get scam safety advice from your AI guide</div>
+            </Link>
           </div>
         </div>
 
