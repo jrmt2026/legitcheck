@@ -6,12 +6,15 @@ import {
   ArrowLeft, Copy, Check, MessageCircle, ExternalLink,
   AlertTriangle, CheckCircle2, Search, Flag, TrendingDown,
   TrendingUp, Minus, ShieldCheck, Share2, RotateCcw,
-  ChevronDown, ChevronUp, Zap, Lock, UserPlus,
+  ChevronDown, ChevronUp, Zap, Lock, UserPlus, BookOpen,
 } from 'lucide-react'
 import type { DecisionResult } from '@/types'
 import toast from 'react-hot-toast'
 import ShareButton from './ShareButton'
 import ReportScamModal from './ReportScamModal'
+import OfficialVerificationCard from './OfficialVerificationCard'
+import ReportingDirectoryCard from './ReportingDirectoryCard'
+import { getVerificationSources, getDirectoryEntries, CATEGORY_TAGS } from '@/lib/officialSources'
 
 interface Props {
   result: DecisionResult
@@ -771,6 +774,58 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
             )}
           </div>
         )}
+
+        {/* ── Official Verification Needed ──────────────────────────────── */}
+        {tier !== 'guest' && (() => {
+          const sources = getVerificationSources(result.categoryId)
+          if (!sources.length) return null
+          return (
+            <div className="space-y-3">
+              <p className="sec-label flex items-center gap-1.5">
+                <ShieldCheck size={11} className="text-brand-teal opacity-80" />
+                Official Verification Needed
+              </p>
+              {sources.map(s => (
+                <OfficialVerificationCard key={s.id} source={s} lang={lang} />
+              ))}
+            </div>
+          )
+        })()}
+
+        {/* ── Reporting & Customer Service Directory ─────────────────────── */}
+        {tier !== 'guest' && (() => {
+          const entries = getDirectoryEntries(result.categoryId)
+          const tags    = CATEGORY_TAGS[result.categoryId] ?? []
+          if (!entries.length) return null
+          return (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="sec-label flex items-center gap-1.5 mb-0">
+                  <Flag size={11} className="text-brand-red opacity-80" />
+                  Where to report or get help
+                </p>
+                <Link
+                  href="/directory"
+                  className="flex items-center gap-1 text-xs text-ink-3 hover:text-ink transition-colors"
+                >
+                  <BookOpen size={11} /> Full directory
+                </Link>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map(tag => (
+                    <span key={tag} className="px-2.5 py-1 bg-paper-2 border border-line rounded-full text-[11px] text-ink-3 font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {entries.map(e => (
+                <ReportingDirectoryCard key={e.id} entry={e} />
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Disclaimer */}
         <div className="border-l-2 border-line pl-3 py-1">

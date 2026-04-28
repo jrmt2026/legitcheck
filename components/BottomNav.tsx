@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Home, Search, Flag, BookOpen, UserCircle, AlertTriangle } from 'lucide-react'
+import { Home, Search, Flag, BookOpen, UserCircle, AlertTriangle, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const HIDDEN_PREFIXES = ['/auth/', '/admin', '/dashboard/agents']
@@ -33,11 +33,11 @@ export default function BottomNav() {
         { href: '/profile',   icon: UserCircle,    label: 'Profile' },
       ]
     : [
-        { href: '/',         icon: Home,          label: 'Home'    },
-        { href: '/buyer',    icon: Search,        label: 'Check'   },
-        { href: '/sos',      icon: AlertTriangle, label: 'SOS'     },
-        { href: '/report',   icon: Flag,          label: 'Report'  },
-        { href: '/library',  icon: BookOpen,      label: 'Library' },
+        { href: '/',          icon: Home,          label: 'Home'      },
+        { href: '/buyer',     icon: Search,        label: 'Check'     },
+        { href: '/sos',       icon: AlertTriangle, label: 'SOS'       },
+        { href: '/report',    icon: Flag,          label: 'Report'    },
+        { href: '/directory', icon: Building2,     label: 'Directory' },
       ]
 
   return (

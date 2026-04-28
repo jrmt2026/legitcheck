@@ -307,12 +307,13 @@ export default async function HomePage() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-2 mb-3">
             {[
-              { href: '/buyer',   label: 'Check'    },
-              { href: '/report',  label: 'Report'   },
-              { href: '/library', label: 'Library'  },
-              { href: '/sos',     label: 'Scam SOS' },
-              { href: '/privacy', label: 'Privacy'  },
-              { href: '/terms',   label: 'Terms'    },
+              { href: '/buyer',     label: 'Check'     },
+              { href: '/report',    label: 'Report'    },
+              { href: '/library',   label: 'Library'   },
+              { href: '/directory', label: 'Directory' },
+              { href: '/sos',       label: 'Scam SOS'  },
+              { href: '/privacy',   label: 'Privacy'   },
+              { href: '/terms',     label: 'Terms'     },
             ].map(({ href, label }) => (
               <Link key={href} href={href} className="hover:text-white/60 transition-colors">{label}</Link>
             ))}
