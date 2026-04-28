@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import {
   ShieldCheck, ArrowRight, Search, TrendingUp, Heart,
   Building2, Home, Plane, MessageSquare, Globe, CreditCard,
-  HeartHandshake, FlaskConical, Flag, BookOpen, Users,
+  HeartHandshake, Flag, BookOpen, Users,
   Zap, Lock, CheckCircle,
 } from 'lucide-react'
 import HeroSection from '@/components/HeroSection'
@@ -13,14 +13,6 @@ export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/dashboard')
-
-  const DEMO_PREVIEWS = [
-    { emoji: '🚗', title: "Gov't Fine SMS",         risk: 'SCAM',      riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 5  },
-    { emoji: '💰', title: '30% Monthly Returns',  risk: 'SCAM',      riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 8  },
-    { emoji: '✅', title: 'Online Order',           risk: 'SAFE',      riskColor: 'bg-brand-green/20 text-green-300 border-brand-green/30', score: 91 },
-    { emoji: '🛍️', title: 'Online Seller',          risk: 'HIGH RISK', riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 28 },
-    { emoji: '✈️', title: 'OFW Job Agency',        risk: 'HIGH RISK', riskColor: 'bg-brand-red/20 text-red-300 border-brand-red/30',     score: 12 },
-  ]
 
   const WHAT_WE_CHECK = [
     { icon: Search,        label: 'Online Sellers',   desc: 'FB Marketplace, Shopee, Lazada, OLX' },
@@ -104,48 +96,40 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── Demo previews ───────────────────────────────────────────────────── */}
-        <section className="bg-[#0F1318] py-14">
+        {/* ── Real check CTA ──────────────────────────────────────────────────── */}
+        <section className="bg-ink py-14 border-y border-white/10">
           <div className="max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full text-white/50 text-xs font-semibold font-mono mb-3 border border-white/10">
-                <FlaskConical size={11} /> Demo examples — not real checks
-              </div>
-              <h2 className="text-3xl font-bold text-white tracking-tight">See how it works</h2>
+              <h2 className="text-3xl font-bold text-white tracking-tight">Check something now</h2>
               <p className="text-base text-white/40 mt-2 max-w-sm mx-auto">
-                These are sample scenarios we built. Tap one to see a full analysis.
+                Paste any message, link, or account number — get a risk verdict in seconds.
               </p>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {DEMO_PREVIEWS.map((d, i) => (
+              {[
+                { emoji: '📱', label: 'Suspicious SMS',     desc: 'Paste a text message or smishing link'        },
+                { emoji: '🛍️', label: 'Online Seller',      desc: 'Facebook Marketplace, Shopee, OLX listings'   },
+                { emoji: '💰', label: 'Investment Offer',   desc: 'Guaranteed returns, crypto, networking'        },
+                { emoji: '✈️', label: 'Job / OFW Offer',   desc: 'Recruitment, processing fees, deployment'      },
+                { emoji: '🏦', label: 'Account Number',     desc: 'GCash, Maya, bank — check community reports'  },
+                { emoji: '🌐', label: 'Website or Link',    desc: 'Phishing sites, fake shops, lookalike URLs'   },
+              ].map((item, i) => (
                 <Link
-                  key={d.title}
-                  href="/demo"
+                  key={item.label}
+                  href="/buyer"
                   className="group flex flex-col gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 active:scale-[0.98] transition-all animate-pop-in"
                   style={{ animationDelay: `${i * 0.08}s` }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl">{d.emoji}</span>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${d.riskColor}`}>
-                      {d.risk} <span className="font-mono opacity-60">{d.score}/100</span>
-                    </div>
+                  <span className="text-2xl">{item.emoji}</span>
+                  <div>
+                    <p className="font-semibold text-white text-sm">{item.label}</p>
+                    <p className="text-xs text-white/40 mt-0.5 leading-snug">{item.desc}</p>
                   </div>
-                  <p className="font-semibold text-white text-sm">{d.title}</p>
                   <div className="flex items-center gap-1 text-xs text-white/30 group-hover:text-white/60 transition-colors mt-auto">
-                    Try this demo <ArrowRight size={11} />
+                    Check now <ArrowRight size={11} />
                   </div>
                 </Link>
               ))}
-
-              <Link
-                href="/demo"
-                className="flex flex-col items-center justify-center gap-2 bg-brand-green/10 border border-brand-green/20 text-brand-green rounded-2xl p-4 hover:bg-brand-green/20 active:scale-[0.98] transition-all min-h-[130px]"
-              >
-                <FlaskConical size={24} className="opacity-80" />
-                <span className="font-semibold text-sm">See all 10 demos</span>
-                <span className="text-xs text-brand-green/60">No account needed</span>
-              </Link>
             </div>
           </div>
         </section>
@@ -175,7 +159,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── Community / Report ──────────────────────────────────────────────── */}
-        <section className="bg-[#110505] py-14">
+        <section className="bg-ink py-14 border-y border-white/10">
           <div className="max-w-4xl mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
               <div>
@@ -303,7 +287,6 @@ export default async function HomePage() {
           <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-2 mb-3">
             {[
               { href: '/buyer',   label: 'Check'    },
-              { href: '/demo',    label: 'Demo'     },
               { href: '/report',  label: 'Report'   },
               { href: '/library', label: 'Library'  },
               { href: '/sos',     label: 'Scam SOS' },
