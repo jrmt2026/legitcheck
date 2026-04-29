@@ -188,7 +188,7 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={animatedOffset}
-          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.16,1,0.3,1)' }}
+          style={{ transition: 'stroke-dashoffset 0.4s cubic-bezier(0.16,1,0.3,1)' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
