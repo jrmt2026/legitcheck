@@ -57,6 +57,10 @@ export interface DecisionResult {
 
 export type PricingPlanId =
   | 'free'
+  | 'single'
+  | 'pack5'
+  | 'pack15'
+  | 'pack50'
   | 'trust_credits'
   | 'full_check'
   | 'case_pack'

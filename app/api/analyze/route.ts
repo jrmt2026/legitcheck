@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createHash } from 'crypto'
 import { detectSignals, computeRisk, detectCategory, SIGNALS } from '@/lib/decisionEngine'
 import type { RiskColor, CategoryId, RiskLevelLabel } from '@/types'
 
@@ -164,14 +165,69 @@ export const maxDuration = 60 // allow up to 60s on Vercel Pro; free tier capped
 export async function POST(req: Request) {
   const { text, images } = await req.json()
 
-  // ── Auth check + rate limiting ────────────────────────────────────────────
+  // ── Auth + usage limits ────────────────────────────────────────────────────
   const authHeader = req.headers.get('authorization')
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
   let tier: 'guest' | 'basic' | 'full' = 'guest'
+  let authedUserId: string | null = null
 
-  if (token) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('x-real-ip')
+    || 'unknown'
+  const ipHash = createHash('sha256').update(ip).digest('hex')
+
+  if (!token) {
+    // Anonymous: 1 free check per IP ever
+    const { count } = await supabase
+      .from('anonymous_checks')
+      .select('*', { count: 'exact', head: true })
+      .eq('ip_hash', ipHash)
+
+    if ((count ?? 0) >= 1) {
+      return NextResponse.json({ limitReached: true, tier: 'guest', reason: 'anon_limit' }, { status: 429 })
+    }
+    // Record this check — we'll commit it at the end (after analysis succeeds)
+  } else {
     const { data: { user } } = await supabase.auth.getUser(token)
-    if (user) tier = 'full'
+    if (user) {
+      authedUserId = user.id
+
+      // Check premium credit balance
+      const { data: premiumCredits } = await supabase
+        .rpc('get_premium_credits', { p_user_id: user.id })
+
+      if ((premiumCredits ?? 0) > 0) {
+        tier = 'full'
+      } else {
+        // No premium credits — use free monthly allowance (3/month)
+        const profile = await supabase
+          .from('profiles')
+          .select('free_checks_this_month, free_checks_month_reset')
+          .eq('id', user.id)
+          .single()
+
+        const now = new Date()
+        const resetDate = profile.data?.free_checks_month_reset
+          ? new Date(profile.data.free_checks_month_reset)
+          : new Date(0)
+
+        let checksUsed = profile.data?.free_checks_this_month ?? 0
+
+        // Reset counter if we've crossed a month boundary
+        if (now.getMonth() !== resetDate.getMonth() || now.getFullYear() !== resetDate.getFullYear()) {
+          checksUsed = 0
+          await supabase
+            .from('profiles')
+            .update({ free_checks_this_month: 0, free_checks_month_reset: now.toISOString() })
+            .eq('id', user.id)
+        }
+
+        if (checksUsed >= 3) {
+          return NextResponse.json({ limitReached: true, tier: 'basic', reason: 'monthly_limit' }, { status: 429 })
+        }
+        tier = 'basic'
+      }
+    }
   }
 
   let analysisText = text || ''
@@ -630,6 +686,53 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
 
   finalResult.confidenceScore = confidenceScore
   finalResult.riskLevelLabel  = riskLevelLabel
+
+  // ── Post-analysis: record usage ───────────────────────────────────────────
+  if (!authedUserId) {
+    // Anonymous — record IP hash
+    await supabase.from('anonymous_checks').insert({ ip_hash: ipHash })
+  } else if (tier === 'full') {
+    // Premium: debit 1 credit from oldest active batch
+    const { data: batches } = await supabase
+      .from('credit_batches')
+      .select('id, total_credits, used_credits')
+      .eq('user_id', authedUserId)
+      .order('created_at', { ascending: true })
+
+    const activeBatch = (batches || []).find(b => b.used_credits < b.total_credits)
+    if (activeBatch) {
+      await supabase
+        .from('credit_batches')
+        .update({ used_credits: activeBatch.used_credits + 1 })
+        .eq('id', activeBatch.id)
+
+      await supabase.from('credit_ledger').insert({
+        user_id:     authedUserId,
+        batch_id:    activeBatch.id,
+        delta:       -1,
+        description: 'Premium check used',
+      })
+
+      const { data: newBalance } = await supabase
+        .rpc('get_premium_credits', { p_user_id: authedUserId })
+      await supabase
+        .from('profiles')
+        .update({ credits_remaining: newBalance ?? 0 })
+        .eq('id', authedUserId)
+    }
+  } else if (tier === 'basic') {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('free_checks_this_month')
+      .eq('id', authedUserId)
+      .single()
+    if (prof) {
+      await supabase
+        .from('profiles')
+        .update({ free_checks_this_month: (prof.free_checks_this_month ?? 0) + 1 })
+        .eq('id', authedUserId)
+    }
+  }
 
   return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, confidenceScore, riskLevelLabel, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier })
 }

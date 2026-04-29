@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, Copy, Check, MessageCircle, ExternalLink,
+  ArrowLeft, ArrowRight, Copy, Check, MessageCircle, ExternalLink,
   AlertTriangle, CheckCircle2, Search, Flag, TrendingDown,
   TrendingUp, Minus, ShieldCheck, Share2, RotateCcw,
-  ChevronDown, ChevronUp, Zap, Lock, UserPlus, BookOpen,
+  ChevronDown, ChevronUp, Zap, Lock, UserPlus, BookOpen, Loader2,
 } from 'lucide-react'
 import FeedbackButtons from './FeedbackButtons'
 import ContributeConsent from './ContributeConsent'
@@ -197,6 +197,99 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
         </span>
         <span className={`text-xs font-mono ${isCritical ? 'text-white/60' : 'text-ink-3'}`}>/100</span>
       </div>
+    </div>
+  )
+}
+
+const PRICING_PLANS = [
+  { id: 'single', label: '1 check', price: '₱79',  highlight: false, desc: 'One full premium check' },
+  { id: 'pack5',  label: '5 checks', price: '₱99',  highlight: true,  desc: 'Best value — ₱20/check' },
+  { id: 'pack15', label: '15 checks', price: '₱199', highlight: false, desc: 'For families & small sellers' },
+]
+
+function PaywallUpgrade({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const [loading, setLoading] = useState<string | null>(null)
+
+  async function handleBuy(planId: string) {
+    if (!isLoggedIn) {
+      window.location.href = '/auth/signup?next=/buyer'
+      return
+    }
+    setLoading(planId)
+    try {
+      const res = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId }),
+      })
+      const data = await res.json()
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl
+      } else {
+        alert(data.error || 'Payment setup failed. Try again.')
+      }
+    } catch {
+      alert('Network error. Try again.')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  return (
+    <div className="bg-ink rounded-2xl p-5 space-y-4">
+      <div className="text-center space-y-2">
+        <div className="w-12 h-12 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mx-auto">
+          <Lock size={20} className="text-brand-green" />
+        </div>
+        <p className="text-base font-bold text-white">Unlock Full Analysis</p>
+        <p className="text-sm text-white/60 leading-relaxed">
+          Get the complete report — every red flag, score breakdown, evidence checklist, and exactly what to do next.
+        </p>
+      </div>
+
+      {/* Feature list */}
+      <div className="grid grid-cols-2 gap-2">
+        {['All red flags', 'Score breakdown', 'Evidence checklist', 'Official resources', 'Copy & share', 'Priority analysis'].map(f => (
+          <div key={f} className="flex items-center gap-1.5 text-xs text-white/70">
+            <Check size={10} className="text-brand-green flex-shrink-0" />
+            {f}
+          </div>
+        ))}
+      </div>
+
+      {/* Pricing cards */}
+      <div className="space-y-2">
+        {PRICING_PLANS.map(plan => (
+          <button
+            key={plan.id}
+            onClick={() => handleBuy(plan.id)}
+            disabled={!!loading}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all text-left ${
+              plan.highlight
+                ? 'bg-brand-green border-brand-green/50 hover:bg-brand-green/90'
+                : 'bg-white/8 border-white/15 hover:bg-white/15'
+            } ${loading === plan.id ? 'opacity-60 cursor-wait' : ''}`}
+          >
+            <div>
+              <p className={`text-sm font-bold ${plan.highlight ? 'text-white' : 'text-white'}`}>
+                {plan.label}
+                {plan.highlight && <span className="ml-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-semibold">BEST VALUE</span>}
+              </p>
+              <p className={`text-xs mt-0.5 ${plan.highlight ? 'text-white/80' : 'text-white/50'}`}>{plan.desc}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-base font-bold ${plan.highlight ? 'text-white' : 'text-white/90'}`}>{plan.price}</span>
+              {loading === plan.id
+                ? <Loader2 size={14} className="text-white/60 animate-spin" />
+                : <ArrowRight size={14} className={plan.highlight ? 'text-white/80' : 'text-white/40'} />}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <p className="text-center text-xs text-white/30">
+        Secure checkout via GCash, Maya, or card · Credits never expire
+      </p>
     </div>
   )
 }
@@ -601,31 +694,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* Basic upgrade gate */}
-        {tier === 'basic' && (
-          <div className="bg-ink rounded-2xl p-5 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto">
-              <Lock size={20} className="text-white/60" />
-            </div>
-            <div>
-              <p className="text-base font-bold text-white mb-1">Unlock full analysis</p>
-              <p className="text-sm text-white/60 leading-relaxed">
-                Upgrade to Pro for unlimited checks, score breakdown, evidence checklist, and full reports.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-left">
-              {['Unlimited checks', 'Score breakdown', 'Evidence checklist', 'Copy & share reports'].map(f => (
-                <div key={f} className="flex items-center gap-1.5 text-xs text-white/60">
-                  <Check size={10} className="text-brand-green flex-shrink-0" />
-                  {f}
-                </div>
-              ))}
-            </div>
-            <button disabled className="w-full bg-brand-green/40 text-white/50 font-bold rounded-xl py-3.5 cursor-not-allowed text-sm">
-              Upgrade to Pro — coming soon
-            </button>
-          </div>
-        )}
+        {/* Premium paywall gate */}
+        {tier === 'basic' && <PaywallUpgrade isLoggedIn={isLoggedIn} />}
 
         {/* Score breakdown — full only */}
         {tier === 'full' && scoreSteps.length > 1 && (

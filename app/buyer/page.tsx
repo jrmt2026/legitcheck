@@ -193,7 +193,11 @@ export default function BuyerPage() {
         body: JSON.stringify({ text: input, images, categoryHint: selectedCategory }),
       })
       const data = await res.json()
-      if (res.ok) {
+      if (res.status === 429 && data.limitReached) {
+        // Limit reached — run local engine for a preview score, then gate behind paywall
+        resultTier = data.tier as 'guest' | 'basic'
+        // fall through to local engine below
+      } else if (res.ok) {
         finalResult    = data.result
         analysisText   = data.extractedText || input
         if (data.scoreSteps) setScoreSteps(data.scoreSteps)
@@ -282,7 +286,7 @@ export default function BuyerPage() {
             <RotateCcw size={14} /> New check
           </button>
         </header>
-        <ResultClient result={result} checkId={savedCheckId} inputText={input} scoreSteps={scoreSteps} tier={tier} />
+        <ResultClient result={result} checkId={savedCheckId} inputText={input} scoreSteps={scoreSteps} tier={tier} isLoggedIn={isAuth} />
       </div>
     )
   }
