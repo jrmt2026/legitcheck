@@ -9,7 +9,8 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
+        display: ['var(--font-display)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       colors: {
         brand: {
@@ -74,6 +75,8 @@ module.exports = {
         'shield-pulse': 'shieldPulse 2s ease-in-out infinite',
         'danger-pulse': 'dangerPulse 1.5s ease-in-out infinite',
         'bounce-soft':  'bounceSoft 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+        'spin-slow':    'spin 3s linear infinite',
+        'scan-sweep':   'scanSweep 2s ease-in-out infinite',
       },
       keyframes: {
         fadeIn:       { '0%': { opacity: '0' },                                                '100%': { opacity: '1' } },
@@ -82,6 +85,7 @@ module.exports = {
         shieldPulse:  { '0%, 100%': { transform: 'scale(1)', opacity: '1' },                  '50%': { transform: 'scale(1.04)', opacity: '0.85' } },
         dangerPulse:  { '0%, 100%': { boxShadow: '0 0 0 0 rgba(192,49,44,0.3)' },             '50%': { boxShadow: '0 0 0 12px rgba(192,49,44,0)' } },
         bounceSoft:   { '0%': { transform: 'scale(0.9)', opacity: '0' }, '60%': { transform: 'scale(1.04)' }, '100%': { transform: 'scale(1)', opacity: '1' } },
+        scanSweep:    { '0%, 100%': { opacity: '0.3', transform: 'rotate(0deg)' }, '50%': { opacity: '0.7', transform: 'rotate(180deg)' } },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

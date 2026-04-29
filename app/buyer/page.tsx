@@ -309,15 +309,27 @@ export default function BuyerPage() {
             </div>
           ) : (
             <>
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full border-2 border-white/20 flex items-center justify-center">
-                  <ShieldCheck size={32} className="text-white/60 animate-float" />
+              <div className="relative flex items-center justify-center">
+                {/* Outer pulse rings */}
+                <div className="absolute w-40 h-40 rounded-full border border-brand-green/15 animate-pulse-ring" />
+                <div className="absolute w-40 h-40 rounded-full border border-brand-green/10 animate-pulse-ring" style={{ animationDelay: '0.9s' }} />
+                {/* Rotating scan sweep */}
+                <div
+                  className="absolute w-28 h-28 rounded-full animate-spin-slow"
+                  style={{
+                    background: 'conic-gradient(from 0deg, transparent 0%, rgba(26,153,104,0.0) 60%, rgba(26,153,104,0.25) 85%, rgba(26,153,104,0.5) 100%)',
+                    animationDuration: '3s',
+                  }}
+                />
+                {/* Inner shield */}
+                <div className="relative z-10 w-24 h-24 rounded-full bg-brand-green/10 border-2 border-brand-green/40 flex items-center justify-center"
+                  style={{ boxShadow: '0 0 32px rgba(26,153,104,0.2), 0 0 8px rgba(26,153,104,0.1)' }}>
+                  <ShieldCheck size={34} className="text-brand-green animate-float" />
                 </div>
-                <div className="absolute -inset-2 rounded-full border border-white/20 animate-ping opacity-30" />
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-white mb-1">Analyzing your check…</p>
-                <p className="text-sm text-white/50 max-w-xs">Checking links, claims, report history, and suspicious details. This may take a few seconds.</p>
+                <p className="text-xl font-bold text-white mb-2 tracking-tight">Scanning for scam signals…</p>
+                <p className="text-sm text-white/40 max-w-xs leading-relaxed">Analyzing patterns, links, and report history. Usually under 10 seconds.</p>
               </div>
             </>
           )}
@@ -434,20 +446,23 @@ export default function BuyerPage() {
               <span className="bg-line text-ink-3 px-1.5 py-0.5 rounded text-[10px] font-bold">OPTIONAL</span>
               What type is this? (auto-detected if blank)
             </p>
-            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-              {CATEGORIES.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedCategory(prev => prev === c.id ? null : c.id)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all text-xs font-medium whitespace-nowrap ${
-                    selectedCategory === c.id
-                      ? 'border-ink bg-ink text-white'
-                      : 'border-line bg-paper hover:border-ink-3 text-ink-2'
-                  }`}
-                >
-                  <span>{c.icon}</span> {c.label}
-                </button>
-              ))}
+            <div className="relative">
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide"
+                style={{ maskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 40px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 40px), transparent 100%)' }}>
+                {CATEGORIES.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedCategory(prev => prev === c.id ? null : c.id)}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all text-xs font-medium whitespace-nowrap ${
+                      selectedCategory === c.id
+                        ? 'border-ink bg-ink text-white'
+                        : 'border-line bg-paper hover:border-ink-3 text-ink-2'
+                    }`}
+                  >
+                    <span>{c.icon}</span> {c.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -518,7 +533,7 @@ export default function BuyerPage() {
           </div>
 
           {/* Sticky analyze button */}
-          <div className="sm:static fixed bottom-[72px] left-0 right-0 sm:p-0 p-4 bg-paper-2/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none border-t border-line sm:border-0 z-40">
+          <div className="sm:static fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 sm:p-0 p-4 bg-paper-2/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none border-t border-line sm:border-0 z-40">
             <button
               onClick={handleAnalyze}
               disabled={!input.trim() && uploadedFiles.length === 0}
@@ -527,7 +542,7 @@ export default function BuyerPage() {
               Analyze Risk <ArrowRight size={18} />
             </button>
           </div>
-          <div className="h-36 sm:hidden" />
+          <div className="h-44 sm:hidden" />
         </div>
       )}
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, Copy, Check, MessageCircle, ExternalLink,
@@ -155,7 +155,12 @@ function parseFinding(text: string): { observation: string; reason: string } | n
 function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }) {
   const radius = 54
   const circumference = 2 * Math.PI * radius
-  const offset = circumference - (score / 100) * circumference
+  const [animatedOffset, setAnimatedOffset] = useState(circumference)
+
+  useEffect(() => {
+    const t = setTimeout(() => setAnimatedOffset(circumference - (score / 100) * circumference), 200)
+    return () => clearTimeout(t)
+  }, [score, circumference])
 
   const isCritical = riskLevel === 'critical'
   const strokeColor = {
@@ -182,8 +187,8 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 0.4s cubic-bezier(0.16,1,0.3,1)' }}
+          strokeDashoffset={animatedOffset}
+          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.16,1,0.3,1)' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -307,11 +312,11 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
         <div className="max-w-lg mx-auto">
 
           {/* Check complete status */}
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-4 border ${
-            isCritical ? 'bg-white/15 border-white/25 text-white' : 'bg-paper border-line text-ink-2'
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-5 border ${
+            isCritical ? 'bg-white/15 border-white/25 text-white' : 'bg-paper border-line text-ink-3'
           }`}>
-            <CheckCircle2 size={14} />
-            Check complete — your result is ready
+            <CheckCircle2 size={12} />
+            Analysis complete
           </div>
 
           {/* Risk level badge */}
@@ -327,7 +332,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
 
           {/* Score ring */}
-          <div className="flex flex-col items-center mb-5 animate-scale-in">
+          <div className="flex flex-col items-center mb-6 animate-scale-in" style={{ animationDelay: '0.1s' }}>
             <ScoreRing score={trustScore} riskLevel={riskLevel} />
             <p className={`text-xs font-medium mt-2 ${isCritical ? 'text-white/50' : 'text-ink-3'}`}>
               Final Safety Score · {trustScore < 50 ? 'Lower = higher scam risk' : 'Higher = lower scam risk'}

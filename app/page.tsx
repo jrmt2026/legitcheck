@@ -59,11 +59,11 @@ export default async function HomePage() {
         {/* ── Stats strip ─────────────────────────────────────────────────────── */}
         <div className="border-y border-white/10 bg-white/5 py-4">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs text-white/40 font-medium">
-              <span className="flex items-center gap-1.5"><ShieldCheck size={13} className="text-brand-green" /> Risk guidance, not a legal finding</span>
-              <span className="flex items-center gap-1.5"><Lock       size={13} className="text-brand-blue"   /> No OTPs, PINs, or passwords</span>
-              <span className="flex items-center gap-1.5"><Users      size={13} className="text-brand-purple" /> Community-powered reports</span>
-              <span className="flex items-center gap-1.5"><Zap        size={13} className="text-brand-yellow" /> Filipino marketplace expertise</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 text-xs text-white/50 font-medium">
+              <span className="flex items-center gap-2"><ShieldCheck size={13} className="text-brand-green flex-shrink-0" /> Risk guidance, not a legal finding</span>
+              <span className="flex items-center gap-2"><Lock       size={13} className="text-brand-blue flex-shrink-0"   /> No OTPs, PINs, or passwords</span>
+              <span className="flex items-center gap-2"><Users      size={13} className="text-brand-purple flex-shrink-0" /> Community-powered reports</span>
+              <span className="flex items-center gap-2"><Zap        size={13} className="text-brand-yellow flex-shrink-0" /> Filipino scam expertise</span>
             </div>
           </div>
         </div>
@@ -72,8 +72,8 @@ export default async function HomePage() {
         <section className="bg-paper-2 py-14">
           <div className="max-w-4xl mx-auto px-4">
             <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-ink tracking-tight">How it works</h2>
-              <p className="text-base text-ink-3 mt-2">Three steps. Under 30 seconds.</p>
+              <p className="text-[11px] font-bold tracking-widest uppercase text-brand-green font-mono mb-2">How it works</p>
+              <h2 className="text-3xl font-bold text-ink tracking-tight">Three steps. Under 30 seconds.</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
@@ -100,6 +100,7 @@ export default async function HomePage() {
         <section className="bg-ink py-14 border-y border-white/10">
           <div className="max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
+              <p className="text-[11px] font-bold tracking-widest uppercase text-brand-green font-mono mb-2">Get started</p>
               <h2 className="text-3xl font-bold text-white tracking-tight">Check something now</h2>
               <p className="text-base text-white/40 mt-2 max-w-sm mx-auto">
                 Paste any message, link, or account number — get a risk verdict in seconds.
@@ -138,6 +139,7 @@ export default async function HomePage() {
         <section className="bg-paper py-14">
           <div className="max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
+              <p className="text-[11px] font-bold tracking-widest uppercase text-ink-3 font-mono mb-2">Coverage</p>
               <h2 className="text-3xl font-bold text-ink tracking-tight">What we check</h2>
               <p className="text-base text-ink-3 mt-2">Every major scam type in the Philippines.</p>
             </div>

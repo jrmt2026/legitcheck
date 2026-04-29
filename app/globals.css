@@ -16,13 +16,16 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     font-size: 1rem;
     line-height: 1.6;
   }
 
   h1, h2, h3 {
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-family: var(--font-display, var(--font-inter));
+    line-height: 1.15;
+    letter-spacing: -0.028em;
+    font-weight: 700;
   }
 }
 
@@ -148,6 +151,11 @@
   0%, 100% { background-position: 0% 50%;   }
   50%       { background-position: 100% 50%; }
 }
+@keyframes scanSweep {
+  0%   { transform: rotate(0deg);   opacity: 0.4; }
+  50%  { transform: rotate(180deg); opacity: 0.8; }
+  100% { transform: rotate(360deg); opacity: 0.4; }
+}
 
 /* ── Animation utilities ─────────────────────────────────────────────────── */
 .animate-slide-up   { animation: slideUp   0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
@@ -161,6 +169,8 @@
 .animate-scale-in   { animation: scaleIn      0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-pulse-ring { animation: pulseRing   2s  cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
 .animate-gradient   { animation: gradientShift 6s ease infinite; background-size: 200% 200%; }
+.animate-scan-sweep { animation: scanSweep 2.4s ease-in-out infinite; }
+.font-display { font-family: var(--font-display, var(--font-inter)); }
 
 /* Staggered children */
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
