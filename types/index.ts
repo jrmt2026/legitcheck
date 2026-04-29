@@ -47,6 +47,10 @@ export interface DecisionResult {
   recommendedPlan: PricingPlanId
   categoryId: CategoryId
   isHardRed: boolean
+  confidenceScore?: number
+  riskLevelLabel?: RiskLevelLabel
+  crossMatches?: CrossMatchSummary[]
+  headlineText?: string    // the main conclusion text (stored separately from aiInsights array)
 }
 
 // ─── Pricing ───────────────────────────────────────────────────────────────────
@@ -170,4 +174,72 @@ export interface NavItem {
   label: string
   href: string
   icon?: string
+}
+
+// ─── Intelligence Platform ─────────────────────────────────────────────────────
+
+export type RiskLevelLabel =
+  | 'Likely Safe'
+  | 'Needs Verification'
+  | 'Suspicious'
+  | 'High Risk'
+  | 'Critical Risk'
+
+export type EntityType =
+  | 'person'
+  | 'business'
+  | 'phone'
+  | 'email'
+  | 'domain'
+  | 'url'
+  | 'wallet'
+  | 'bank_account'
+  | 'social_page'
+  | 'app_name'
+  | 'sender_name'
+
+export type FeedbackType = 'accurate' | 'false_positive' | 'false_negative' | 'unclear'
+
+export type EntityVerifiedStatus =
+  | 'unverified'
+  | 'disputed'
+  | 'verified_safe'
+  | 'verified_risky'
+  | 'public_advisory'
+
+export interface ExtractedEntity {
+  entity_type: EntityType
+  value: string
+  normalized_value: string
+  role: 'sender' | 'recipient' | 'claimed_company' | 'payment_account' | 'contact_number' | 'website' | 'social_page' | 'referenced_person' | 'other'
+  masked_value: string
+}
+
+export interface CrossMatchSummary {
+  entity_type: EntityType
+  masked_value: string
+  report_count: number
+  risk_score: number
+  verified_status: EntityVerifiedStatus
+  label: string
+}
+
+export interface FeedbackRecord {
+  id: string
+  check_id: string
+  user_id?: string
+  feedback_type: FeedbackType
+  user_comment?: string
+  review_status: 'pending' | 'reviewed' | 'resolved'
+  created_at: string
+}
+
+export interface ReportCreditRecord {
+  id: string
+  user_id: string
+  source_report_id?: string
+  credit_type: 'earned_from_reports' | 'promo' | 'admin'
+  status: 'pending' | 'awarded' | 'used' | 'expired'
+  created_at: string
+  used_at?: string
 }

@@ -8,6 +8,8 @@ import {
   TrendingUp, Minus, ShieldCheck, Share2, RotateCcw,
   ChevronDown, ChevronUp, Zap, Lock, UserPlus, BookOpen,
 } from 'lucide-react'
+import FeedbackButtons from './FeedbackButtons'
+import ContributeConsent from './ContributeConsent'
 import type { DecisionResult } from '@/types'
 import toast from 'react-hot-toast'
 import ShareButton from './ShareButton'
@@ -22,6 +24,9 @@ interface Props {
   inputText?: string
   scoreSteps?: Array<{ label: string; delta: number }>
   tier?: 'guest' | 'basic' | 'full'
+  confidenceScore?: number
+  isLoggedIn?: boolean
+  userToken?: string
 }
 
 type RiskLevel = 'critical' | 'high' | 'caution' | 'low' | 'safe'
@@ -86,7 +91,7 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     accentText: 'text-white',
     flagBg: 'bg-brand-orange-light',
     flagBorder: 'border-brand-orange/20',
-    label: 'High Caution',
+    label: 'Suspicious',
     emoji: '🔶',
     recommendation: 'High caution. Verify muna.',
     recommendationTl: 'Mataas na babala. Mag-verify muna.',
@@ -100,7 +105,7 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     accentText: 'text-white',
     flagBg: 'bg-brand-yellow-light',
     flagBorder: 'border-brand-yellow/20',
-    label: 'Caution',
+    label: 'Needs Verification',
     emoji: '🔔',
     recommendation: 'Some warning signs found. Verify muna.',
     recommendationTl: 'May mga babala. Mag-verify bago mag-send.',
@@ -114,7 +119,7 @@ const RISK_THEMES: Record<RiskLevel, RiskTheme> = {
     accentText: 'text-white',
     flagBg: 'bg-paper-2',
     flagBorder: 'border-line',
-    label: 'No Public Reports Found',
+    label: 'Likely Safe',
     emoji: '🔍',
     recommendation: 'No public reports found — still verify carefully.',
     recommendationTl: 'Walang nakitang public report — mag-verify pa rin bago tumuloy.',
@@ -191,7 +196,7 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
   )
 }
 
-export default function ResultClient({ result, checkId, inputText = '', scoreSteps = [], tier = 'full' }: Props) {
+export default function ResultClient({ result, checkId, inputText = '', scoreSteps = [], tier = 'full', confidenceScore, isLoggedIn = false, userToken }: Props) {
   const [lang, setLang]                           = useState<'en' | 'tl'>('en')
   const [copied, setCopied]                       = useState(false)
   const [checkedEvidence, setCheckedEvidence]     = useState<Set<number>>(new Set())
@@ -330,6 +335,15 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
             <p className={`text-[11px] mt-0.5 font-medium ${isCritical ? 'text-white/40' : 'text-ink-3'}`}>
               This is your final result.
             </p>
+            {confidenceScore !== undefined && (
+              <div className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border ${
+                isCritical
+                  ? 'bg-white/10 border-white/20 text-white/70'
+                  : 'bg-paper border-line text-ink-3'
+              }`}>
+                Confidence: {confidenceScore}%
+              </div>
+            )}
           </div>
 
           {/* Headline */}
@@ -365,8 +379,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           {!isInconclusive && riskLevel === 'safe' && (
             <p className="mt-3 text-xs text-ink-3 max-w-xs mx-auto leading-relaxed">
               {lang === 'tl'
-                ? 'Walang nakitang public na report. Hindi ito ibig sabihin na ligtas. Mag-verify pa rin bago magpadala ng pera.'
-                : 'No public reports found. This does not mean it is safe or legitimate. Verify the person, transaction, and payment details before sending money.'}
+                ? 'Malamang ligtas batay sa ibinigay. Hindi ito garantiya. Mag-verify pa rin bago magpadala ng pera.'
+                : 'Likely safe based on what was shared. This is not a guarantee. Verify through official channels before sending money.'}
             </p>
           )}
           {riskLevel === 'high' && (
@@ -826,6 +840,21 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
             </div>
           )
         })()}
+
+        {/* Feedback — was this result accurate? */}
+        {tier !== 'guest' && (
+          <FeedbackButtons checkId={checkId} lang={lang} />
+        )}
+
+        {/* Community contribution consent */}
+        {tier !== 'guest' && (
+          <ContributeConsent
+            checkId={checkId}
+            lang={lang}
+            isLoggedIn={isLoggedIn}
+            userToken={userToken}
+          />
+        )}
 
         {/* Disclaimer */}
         <div className="border-l-2 border-line pl-3 py-1">

@@ -121,6 +121,42 @@ function buildSearchQuery(text: string, url: string | null, phones: string[]): s
   return ''
 }
 
+function computeConfidenceScore({
+  claudeSucceeded,
+  hasImages,
+  hasWebSearch,
+  hasScamDb,
+  canRead,
+  redFlagCount,
+  inputLength,
+}: {
+  claudeSucceeded: boolean
+  hasImages: boolean
+  hasWebSearch: boolean
+  hasScamDb: boolean
+  canRead: boolean
+  redFlagCount: number
+  inputLength: number
+}): number {
+  let confidence = 50
+  if (claudeSucceeded) confidence += 20
+  if (hasImages)        confidence += 10
+  if (hasWebSearch)     confidence += 12
+  if (hasScamDb)        confidence += 15
+  if (!canRead)         confidence -= 20
+  if (redFlagCount >= 3) confidence += 8
+  if (inputLength < 50) confidence -= 15
+  return Math.max(10, Math.min(95, Math.round(confidence)))
+}
+
+function getRiskLevelLabel(trustScore: number, isHardRed: boolean): import('@/types').RiskLevelLabel {
+  if (isHardRed || trustScore < 25) return 'Critical Risk'
+  if (trustScore < 40)              return 'High Risk'
+  if (trustScore < 60)              return 'Suspicious'
+  if (trustScore < 75)              return 'Needs Verification'
+  return 'Likely Safe'
+}
+
 // ── Main POST handler ──────────────────────────────────────────────────────────
 
 export const maxDuration = 60 // allow up to 60s on Vercel Pro; free tier capped at 10s
@@ -218,7 +254,9 @@ export async function POST(req: Request) {
   const isWebsiteCheck = !!fetchedUrl
   const hasSearchResults = !!searchContext
 
-  const systemPrompt = `You are LegitCheck PH — the Philippines' most trusted AI fraud investigator. You have comprehensive knowledge of Philippine scam patterns, official government domains, legitimate business practices, and how fraudsters operate.
+  const systemPrompt = `Current date/time in Philippines (Asia/Manila): ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })} — use this as the reference for ALL date comparisons. Never flag a date as "future" unless it clearly occurs AFTER this timestamp. Philippine time is UTC+8.
+
+You are LegitCheck PH — the Philippines' most trusted AI fraud investigator. You have comprehensive knowledge of Philippine scam patterns, official government domains, legitimate business practices, and how fraudsters operate.
 
 Your job: Read what was submitted, apply your knowledge, identify the scam type (if any), and explain your reasoning clearly so a non-expert understands exactly what is happening and what to do.
 
@@ -464,9 +502,9 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     const fbColor: RiskColor = fbTrustScore < 35 ? 'red' : fbTrustScore < 70 ? 'yellow' : 'green'
     fallback.color = fbColor
     if (fbColor === 'red') {
-      fallback.headline    = { en: 'Scam Warning — Stop', tl: 'Babala: Scam — Tigil' }
-      fallback.subheadline = { en: 'High risk detected. Do not send money or share details.', tl: 'Mataas ang panganib. Huwag magpadala ng pera.' }
-      fallback.action      = { en: 'Stop. Do not pay or share any info.', tl: 'Tigil. Huwag magbayad o magbigay ng impormasyon.' }
+      fallback.headline    = { en: 'High Risk — Potential Scam Pattern Detected', tl: 'High Risk — Posibleng Scam na Nadiskubre' }
+      fallback.subheadline = { en: 'High-risk indicators found. Verify through official channels before proceeding.', tl: 'May mataas na senyales ng panganib. Mag-verify muna bago tumuloy.' }
+      fallback.action      = { en: 'Do not proceed. Verify identity and credentials first.', tl: 'Huwag tumuloy. I-verify muna ang pagkakakilanlan.' }
     }
     return NextResponse.json({
       result: { ...fallback, aiInsights: ['Pattern detection only — AI analysis unavailable.'] },
@@ -507,21 +545,33 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
   const isInsufficientContext = verdictColor === 'yellow' && trustScore >= 40 && trustScore < 60 && claudeFindings.length === 0
 
   if (verdictColor === 'red') {
-    finalResult.headline    = { en: 'Scam Warning — Stop', tl: 'Babala: Scam — Tigil' }
-    finalResult.subheadline = { en: 'High risk. Do not send money or share details.', tl: 'Mataas ang panganib. Huwag magpadala ng pera.' }
-    finalResult.action      = { en: 'Stop. Do not pay or share any info.', tl: 'Tigil. Huwag magbayad o magbigay ng impormasyon.' }
+    const isCritical = isHardRed || trustScore < 25
+    finalResult.headline    = isCritical
+      ? { en: 'Critical Risk — High-Risk Indicators Found', tl: 'Critical Risk — May Mataas na Panganib' }
+      : { en: 'High Risk — Potential Scam Pattern Detected', tl: 'High Risk — Posibleng Scam na Nadiskubre' }
+    finalResult.subheadline = isCritical
+      ? { en: 'Strong scam indicators found. Do not send money or share personal details.', tl: 'May matibay na senyales ng scam. Huwag magpadala ng pera o personal na impormasyon.' }
+      : { en: 'High-risk indicators found. Verify through official channels before proceeding.', tl: 'May mataas na senyales ng panganib. Mag-verify muna sa opisyal na paraan bago tumuloy.' }
+    finalResult.action      = isCritical
+      ? { en: 'Stop. Do not pay or share any info until verified.', tl: 'Tigil. Huwag magbayad o magbigay ng impormasyon hanggat hindi na-verify.' }
+      : { en: 'Do not proceed. Verify identity and credentials first.', tl: 'Huwag tumuloy. I-verify muna ang pagkakakilanlan.' }
   } else if (isInsufficientContext) {
     finalResult.headline    = { en: 'Not Enough to Judge', tl: 'Hindi Sapat ang Impormasyon' }
     finalResult.subheadline = { en: 'Add more context — paste the actual message, offer, or conversation.', tl: 'Magbigay ng mas detalyadong impormasyon para ma-assess.' }
     finalResult.action      = { en: 'Paste the actual message or describe what you are checking.', tl: 'I-paste ang mensahe o ilarawan kung ano ang sinusuri.' }
   } else if (verdictColor === 'yellow') {
-    finalResult.headline    = { en: 'Verify Before Proceeding', tl: 'I-verify Bago Tumuloy' }
-    finalResult.subheadline = { en: 'Concerns found — do not share personal details or send money without verifying.', tl: 'May alalahanin — huwag magbigay ng personal na impormasyon o magpadala ng pera nang hindi na-verify.' }
-    finalResult.action      = { en: 'Stop. Verify identity and credentials first.', tl: 'Tigil. I-verify muna ang pagkakakilanlan at kredensyal.' }
+    const isNeedsVerification = trustScore >= 55
+    finalResult.headline    = isNeedsVerification
+      ? { en: 'Needs Verification — Unverified Offer', tl: 'Kailangan ng Verification — Hindi Pa Na-verify' }
+      : { en: 'Suspicious — Verify Through Official Channels', tl: 'Kahina-hinala — Mag-verify sa Opisyal na Paraan' }
+    finalResult.subheadline = isNeedsVerification
+      ? { en: 'Matches some patterns worth verifying. Confirm through official sources before proceeding.', tl: 'May ilang pattern na dapat i-verify. Kumpirmahin sa opisyal na mapagkukunan bago tumuloy.' }
+      : { en: 'Suspicious indicators found. Do not send money or share personal details without verifying first.', tl: 'May kahina-hinalang senyales. Huwag magpadala ng pera o personal na impormasyon nang hindi na-verify.' }
+    finalResult.action      = { en: 'Verify through official channels before proceeding.', tl: 'Mag-verify sa opisyal na paraan bago tumuloy.' }
   } else {
-    finalResult.headline    = { en: 'Looks Legitimate', tl: 'Mukhang Lehitimo' }
-    finalResult.subheadline = { en: 'Positive signals found. Still use official channels.', tl: 'May positibong senyales. Gamitin pa rin ang official channels.' }
-    finalResult.action      = { en: 'Proceed carefully. Always use official channels.', tl: 'Mag-ingat pa rin. Gamitin ang official channels.' }
+    finalResult.headline    = { en: 'Likely Safe — No Major Red Flags Found', tl: 'Malamang Ligtas — Walang Malaking Red Flag' }
+    finalResult.subheadline = { en: 'No major red flags detected. Still verify through official channels before sending money.', tl: 'Walang malaking red flag. Mag-verify pa rin bago magpadala ng pera.' }
+    finalResult.action      = { en: 'Proceed carefully. Always verify through official channels.', tl: 'Mag-ingat pa rin. Mag-verify lagi sa opisyal na paraan.' }
   }
 
   // Build reasons: Claude findings are primary.
@@ -566,5 +616,20 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
 
   finalResult.aiInsights = aiInsights
 
-  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier })
+  const confidenceScore = computeConfidenceScore({
+    claudeSucceeded: claudeFindings.length > 0 || positiveIndicators.length > 0 || entitySummary !== '',
+    hasImages: hasImages,
+    hasWebSearch: !!searchContext,
+    hasScamDb: !!scamDbContext,
+    canRead: true,
+    redFlagCount: claudeFindings.length,
+    inputLength: analysisText.length,
+  })
+
+  const riskLevelLabel = getRiskLevelLabel(trustScore, isHardRed)
+
+  finalResult.confidenceScore = confidenceScore
+  finalResult.riskLevelLabel  = riskLevelLabel
+
+  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, confidenceScore, riskLevelLabel, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier })
 }
