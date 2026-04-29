@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { detectSignals, computeRisk, detectCategory, SIGNALS } from '@/lib/decisionEngine'
-import type { RiskColor, CategoryId } from '@/types'
+import type { RiskColor, CategoryId, RiskLevelLabel } from '@/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -149,7 +149,7 @@ function computeConfidenceScore({
   return Math.max(10, Math.min(95, Math.round(confidence)))
 }
 
-function getRiskLevelLabel(trustScore: number, isHardRed: boolean): import('@/types').RiskLevelLabel {
+function getRiskLevelLabel(trustScore: number, isHardRed: boolean): RiskLevelLabel {
   if (isHardRed || trustScore < 25) return 'Critical Risk'
   if (trustScore < 40)              return 'High Risk'
   if (trustScore < 60)              return 'Suspicious'
