@@ -170,6 +170,7 @@ export async function POST(req: Request) {
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
   let tier: 'guest' | 'basic' | 'full' = 'guest'
   let authedUserId: string | null = null
+  let isAdmin = false
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || req.headers.get('x-real-ip')
@@ -192,40 +193,46 @@ export async function POST(req: Request) {
     if (user) {
       authedUserId = user.id
 
-      // Check premium credit balance
-      const { data: premiumCredits } = await supabase
-        .rpc('get_premium_credits', { p_user_id: user.id })
-
-      if ((premiumCredits ?? 0) > 0) {
+      // Admin: unlimited full checks, no credit debit
+      const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)
+      if (adminEmails.includes(user.email || '')) {
+        isAdmin = true
         tier = 'full'
       } else {
-        // No premium credits — use free monthly allowance (3/month)
-        const profile = await supabase
-          .from('profiles')
-          .select('free_checks_this_month, free_checks_month_reset')
-          .eq('id', user.id)
-          .single()
+        // Check premium credit balance
+        const { data: premiumCredits } = await supabase
+          .rpc('get_premium_credits', { p_user_id: user.id })
 
-        const now = new Date()
-        const resetDate = profile.data?.free_checks_month_reset
-          ? new Date(profile.data.free_checks_month_reset)
-          : new Date(0)
-
-        let checksUsed = profile.data?.free_checks_this_month ?? 0
-
-        // Reset counter if we've crossed a month boundary
-        if (now.getMonth() !== resetDate.getMonth() || now.getFullYear() !== resetDate.getFullYear()) {
-          checksUsed = 0
-          await supabase
+        if ((premiumCredits ?? 0) > 0) {
+          tier = 'full'
+        } else {
+          // No premium credits — use free monthly allowance (3/month)
+          const profile = await supabase
             .from('profiles')
-            .update({ free_checks_this_month: 0, free_checks_month_reset: now.toISOString() })
+            .select('free_checks_this_month, free_checks_month_reset')
             .eq('id', user.id)
-        }
+            .single()
 
-        if (checksUsed >= 3) {
-          return NextResponse.json({ limitReached: true, tier: 'basic', reason: 'monthly_limit' }, { status: 429 })
+          const now = new Date()
+          const resetDate = profile.data?.free_checks_month_reset
+            ? new Date(profile.data.free_checks_month_reset)
+            : new Date(0)
+
+          let checksUsed = profile.data?.free_checks_this_month ?? 0
+
+          if (now.getMonth() !== resetDate.getMonth() || now.getFullYear() !== resetDate.getFullYear()) {
+            checksUsed = 0
+            await supabase
+              .from('profiles')
+              .update({ free_checks_this_month: 0, free_checks_month_reset: now.toISOString() })
+              .eq('id', user.id)
+          }
+
+          if (checksUsed >= 3) {
+            return NextResponse.json({ limitReached: true, tier: 'basic', reason: 'monthly_limit' }, { status: 429 })
+          }
+          tier = 'basic'
         }
-        tier = 'basic'
       }
     }
   }
@@ -701,11 +708,11 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
   finalResult.confidenceScore = confidenceScore
   finalResult.riskLevelLabel  = riskLevelLabel
 
-  // ── Post-analysis: record usage ───────────────────────────────────────────
+  // ── Post-analysis: record usage (admin is exempt) ────────────────────────
   if (!authedUserId) {
     // Anonymous — record IP hash
     await supabase.from('anonymous_checks').insert({ ip_hash: ipHash })
-  } else if (tier === 'full') {
+  } else if (!isAdmin && tier === 'full') {
     // Premium: debit 1 credit from oldest active batch
     const { data: batches } = await supabase
       .from('credit_batches')
@@ -734,7 +741,7 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
         .update({ credits_remaining: newBalance ?? 0 })
         .eq('id', authedUserId)
     }
-  } else if (tier === 'basic') {
+  } else if (!isAdmin && tier === 'basic') {
     const { data: prof } = await supabase
       .from('profiles')
       .select('free_checks_this_month')
