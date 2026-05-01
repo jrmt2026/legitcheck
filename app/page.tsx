@@ -96,45 +96,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── Real check CTA ──────────────────────────────────────────────────── */}
-        <section className="bg-ink py-14 border-y border-white/10">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="text-center mb-8">
-              <p className="text-[11px] font-bold tracking-widest uppercase text-brand-green font-mono mb-2">Get started</p>
-              <h2 className="text-3xl font-bold text-white tracking-tight">Check something now</h2>
-              <p className="text-base text-white/40 mt-2 max-w-sm mx-auto">
-                Paste any message, link, or account number — get a risk verdict in seconds.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[
-                { emoji: '📱', label: 'Suspicious SMS',     desc: 'Paste a text message or smishing link'        },
-                { emoji: '🛍️', label: 'Online Seller',      desc: 'Facebook Marketplace, Shopee, OLX listings'   },
-                { emoji: '💰', label: 'Investment Offer',   desc: 'Guaranteed returns, crypto, networking'        },
-                { emoji: '✈️', label: 'Job / OFW Offer',   desc: 'Recruitment, processing fees, deployment'      },
-                { emoji: '🏦', label: 'Account Number',     desc: 'GCash, Maya, bank — check community reports'  },
-                { emoji: '🌐', label: 'Website or Link',    desc: 'Phishing sites, fake shops, lookalike URLs'   },
-              ].map((item, i) => (
-                <Link
-                  key={item.label}
-                  href="/buyer"
-                  className="group flex flex-col gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 active:scale-[0.98] transition-all animate-pop-in"
-                  style={{ animationDelay: `${i * 0.08}s` }}
-                >
-                  <span className="text-2xl">{item.emoji}</span>
-                  <div>
-                    <p className="font-semibold text-white text-sm">{item.label}</p>
-                    <p className="text-xs text-white/40 mt-0.5 leading-snug">{item.desc}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-white/30 group-hover:text-white/60 transition-colors mt-auto">
-                    Check now <ArrowRight size={11} />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ── What we check ───────────────────────────────────────────────────── */}
         <section className="bg-paper py-14">
           <div className="max-w-4xl mx-auto px-4">
