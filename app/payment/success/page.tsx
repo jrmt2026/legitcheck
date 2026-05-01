@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react'
+import { CheckCircle2, ShieldCheck, ArrowRight, Sparkles, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const PLAN_LABELS: Record<string, { name: string; credits: number }> = {
@@ -13,9 +13,10 @@ const PLAN_LABELS: Record<string, { name: string; credits: number }> = {
 }
 
 export default function PaymentSuccess() {
-  const [credits, setCredits] = useState<number | null>(null)
-  const [plan, setPlan]       = useState<string | null>(null)
-  const [ref, setRef]         = useState<string | null>(null)
+  const [plan, setPlan]         = useState<string | null>(null)
+  const [ref, setRef]           = useState<string | null>(null)
+  const [liveCredits, setLiveCredits] = useState<number | null>(null)
+  const [polling, setPolling]   = useState(true)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -24,20 +25,34 @@ export default function PaymentSuccess() {
     setPlan(p)
     setRef(r)
 
-    // Fetch updated credit balance
+    // Poll for credit balance — webhook fires async after redirect
+    const expected = p ? (PLAN_LABELS[p]?.credits ?? 0) : 0
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
+    let attempts = 0
+    const maxAttempts = 12 // poll up to ~24s
+
+    async function pollCredits() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setPolling(false); return }
+
       const { data } = await supabase
-        .from('profiles')
-        .select('credits_remaining')
-        .eq('id', user.id)
-        .single()
-      if (data) setCredits(data.credits_remaining)
-    })
+        .rpc('get_premium_credits', { p_user_id: user.id })
+
+      const balance = data ?? 0
+      if (balance >= expected || attempts >= maxAttempts) {
+        setLiveCredits(balance >= expected ? balance : expected)
+        setPolling(false)
+      } else {
+        attempts++
+        setTimeout(pollCredits, 2000)
+      }
+    }
+
+    pollCredits()
   }, [])
 
   const planInfo = plan ? PLAN_LABELS[plan] : null
+  const displayCredits = liveCredits ?? planInfo?.credits ?? null
 
   return (
     <div className="min-h-screen bg-paper-2 flex flex-col items-center justify-center px-4">
@@ -71,9 +86,12 @@ export default function PaymentSuccess() {
             <p className="text-sm text-white/60">Your credit balance</p>
             <ShieldCheck size={16} className="text-brand-green" />
           </div>
-          <p className="text-4xl font-bold text-white font-mono">
-            {credits !== null ? credits : (planInfo?.credits ?? '—')}
-          </p>
+          <div className="flex items-center justify-center gap-3">
+            <p className="text-4xl font-bold text-white font-mono">
+              {displayCredits !== null ? displayCredits : '—'}
+            </p>
+            {polling && <Loader2 size={18} className="text-white/40 animate-spin" />}
+          </div>
           <p className="text-xs text-white/40">premium checks remaining</p>
         </div>
 

@@ -26,7 +26,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Protect authenticated-only routes
-  const protectedPaths = ['/dashboard', '/buyer', '/seller', '/result']
+  const protectedPaths = ['/dashboard', '/seller', '/result']
   const isProtected = protectedPaths.some(p => pathname.startsWith(p))
 
   if (isProtected && !user) {

@@ -4,11 +4,13 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import { ArrowRight, CheckCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react'
 
 export default function SignupPage() {
+  const router = useRouter()
   const [step, setStep]         = useState<'form' | 'verify'>('form')
   const [fullName, setFullName] = useState('')
   const [email, setEmail]       = useState('')
@@ -24,7 +26,7 @@ export default function SignupPage() {
     }
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -35,7 +37,12 @@ export default function SignupPage() {
     if (error) {
       toast.error(error.message)
       setLoading(false)
+    } else if (data.session) {
+      // Email confirmation disabled — signed in immediately
+      router.push('/dashboard')
+      router.refresh()
     } else {
+      // Email confirmation enabled — ask user to check inbox
       setStep('verify')
     }
   }

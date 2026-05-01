@@ -91,7 +91,7 @@ export default function PricingPage() {
                   {loading === plan.id ? (
                     <><Loader2 size={14} className="animate-spin" /> Processing…</>
                   ) : (
-                    <>Pay with Maya · {plan.price}</>
+                    <>Pay {plan.price} — GCash · Maya · Card</>
                   )}
                 </button>
               )}
@@ -101,7 +101,7 @@ export default function PricingPage() {
 
         <div className="card text-center py-5 space-y-1">
           <p className="text-xs text-ink-3 leading-relaxed">
-            Payments are processed securely via Maya. Pricing is in Philippine Peso (₱).
+            Payments are processed securely via PayMongo. Accepts GCash, Maya, and credit/debit cards. Pricing is in Philippine Peso (₱).
           </p>
           <p className="text-xs text-ink-3">
             LegitCheck PH is a risk analysis guide — not a legal or government decision.

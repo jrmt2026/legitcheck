@@ -226,10 +226,12 @@ function PaywallUpgrade({ isLoggedIn }: { isLoggedIn: boolean }) {
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl
       } else {
-        alert(data.error || 'Payment setup failed. Try again.')
+        const { default: toast } = await import('react-hot-toast')
+        toast.error(data.error || 'Payment setup failed. Try again.')
       }
     } catch {
-      alert('Network error. Try again.')
+      const { default: toast } = await import('react-hot-toast')
+      toast.error('Network error. Try again.')
     } finally {
       setLoading(null)
     }

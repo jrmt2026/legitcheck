@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Clock, ChevronRight, Settings } from 'lucide-react'
+import { Search, Clock, ChevronRight, Settings, ShieldCheck, Plus } from 'lucide-react'
 import ScamShieldScore from '@/components/ScamShieldScore'
 
 export default async function DashboardPage() {
@@ -29,6 +29,9 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(5)
+
+  const { data: premiumCredits } = await supabase
+    .rpc('get_premium_credits', { p_user_id: user.id })
 
   const colorMap: Record<string, { bg: string; text: string; label: string }> = {
     green:  { bg: 'bg-brand-green-light',  text: 'text-brand-green-dark',  label: 'Low risk'     },
@@ -65,6 +68,45 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold text-ink tracking-tight">Hi, {firstName}.</h1>
           <p className="text-sm text-ink-3 mt-1">Check muna bago bayad. Safe ba 'to?</p>
         </div>
+
+        {/* Premium credits */}
+        {(premiumCredits ?? 0) > 0 ? (
+          <div className="bg-ink rounded-2xl px-4 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-brand-green/20 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck size={16} className="text-brand-green" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">
+                  {premiumCredits} premium check{(premiumCredits ?? 0) > 1 ? 's' : ''} remaining
+                </div>
+                <div className="text-xs text-white/40">Full AI analysis · all red flags</div>
+              </div>
+            </div>
+            <Link
+              href="/dashboard/pricing"
+              className="text-xs font-semibold text-white/60 hover:text-white transition-colors flex items-center gap-1"
+            >
+              <Plus size={12} /> Top up
+            </Link>
+          </div>
+        ) : (
+          <Link
+            href="/dashboard/pricing"
+            className="bg-ink rounded-2xl px-4 py-3.5 flex items-center justify-between group hover:opacity-90 transition-opacity"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck size={16} className="text-white/50" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">Get premium checks</div>
+                <div className="text-xs text-white/40">From ₱79 · GCash · Maya · Card</div>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-white/30 group-hover:text-white/60 transition-colors" />
+          </Link>
+        )}
 
         {/* Scam Shield Score */}
         <ScamShieldScore
