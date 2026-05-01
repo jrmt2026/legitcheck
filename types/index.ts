@@ -37,6 +37,7 @@ export interface DecisionResult {
   action: { en: string; tl: string }
   reasons: Signal[]
   aiInsights?: string[]
+  aiInsightsTl?: string[]
   notification: {
     sms: { en: string; tl: string }
     chat: { en: string; tl: string }

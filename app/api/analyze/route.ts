@@ -302,6 +302,7 @@ export async function POST(req: Request) {
   let trustScore = 50   // neutral default if Claude fails
   let verdictColor: RiskColor = 'yellow'
   let aiInsights: string[] = []
+  let aiInsightsTlArr: string[] = []
   let entitySummary = ''
   let claudeFindings: Array<{ en: string; tl: string; riskPoints: number; severity: any; id: string }> = []
   let positiveIndicators: Array<{ en: string; tl: string; riskPoints: number; severity: any; id: string }> = []
@@ -318,20 +319,26 @@ Your job: Read what was submitted, apply your knowledge, identify the scam type 
 
 Return ONLY this JSON (no markdown, no text outside JSON):
 {
-  "entitySummary": "One specific sentence: what was submitted, what it claims to be, what it is asking the recipient to do, and any names/numbers/links mentioned.",
-  "headlineFinding": "A decisive 1-2 sentence verdict. If it IS a scam: name the scam type and say so directly (e.g. 'This is a smishing scam — the text impersonates MMDA but the link lto.sssg.mx is not an official Philippine government domain.'). If LEGITIMATE: explain what makes it trustworthy. Never hedge when evidence is clear.",
-  "officialResource": "If this involves a government agency, bank, or verifiable institution, state the correct official way to verify: exact official URL or hotline (e.g. 'To check LTO violations yourself: portal.lto.gov.ph — never use links from SMS.'). Leave empty string if not applicable.",
+  "entitySummary": "One specific sentence in English: what was submitted, what it claims to be, what it is asking the recipient to do, and any names/numbers/links mentioned.",
+  "entitySummaryTl": "Same sentence in Filipino/Taglish.",
+  "headlineFinding": "A decisive 1-2 sentence verdict in English. If it IS a scam: name the scam type and say so directly. If LEGITIMATE: explain what makes it trustworthy. Never hedge when evidence is clear.",
+  "headlineFindingTl": "Same verdict in Filipino/Taglish.",
+  "officialResource": "If this involves a government agency, bank, or verifiable institution, state the correct official way to verify in English (e.g. 'To check LTO violations yourself: portal.lto.gov.ph — never use links from SMS.'). Leave empty string if not applicable.",
   "redFlags": [
     {
-      "observation": "Quote the specific text or element that is suspicious — be precise (e.g. 'Link domain is lto.sssg.mx — .mx is Mexico, not a Philippine government domain')",
-      "reason": "2-3 sentences: (1) exactly what is wrong and why it proves fraud, (2) how this specific scam technique works to steal money or data, (3) what the victim risks if they comply. Explain as if to someone who has never seen this scam.",
+      "observation": "Quote the specific suspicious element in English — be precise.",
+      "observationTl": "Same observation in Filipino/Taglish.",
+      "reason": "2-3 sentences in English: (1) exactly what is wrong and why it proves fraud, (2) how this scam technique works, (3) what the victim risks if they comply.",
+      "reasonTl": "Same explanation in Filipino/Taglish.",
       "severity": "critical|high|medium"
     }
   ],
   "positiveIndicators": [
     {
-      "observation": "Specific confirmed positive element — quote from the content",
-      "reason": "2 sentences: why this indicates legitimacy and what protection it provides."
+      "observation": "Specific confirmed positive element in English.",
+      "observationTl": "Same in Filipino/Taglish.",
+      "reason": "2 sentences in English: why this indicates legitimacy.",
+      "reasonTl": "Same in Filipino/Taglish."
     }
   ],
   "canRead": true
@@ -483,11 +490,17 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     entitySummary = parsed.entitySummary || ''
     const officialResource: string = parsed.officialResource || ''
     aiInsights    = [parsed.entitySummary, parsed.headlineFinding, officialResource].filter(Boolean).slice(0, 3)
+    // Filipino translations
+    aiInsightsTlArr = [
+      parsed.entitySummaryTl    || parsed.entitySummary    || '',
+      parsed.headlineFindingTl  || parsed.headlineFinding  || '',
+      officialResource,
+    ].filter(Boolean).slice(0, 3)
 
     // ── Compute trustScore FROM findings — not from Claude's score ──────────────
     // Claude's job is to FIND things. Our job is to SCORE based on what was found.
-    const redFlagList: Array<{ observation: string; reason: string; severity: string }> = parsed.redFlags || []
-    const positiveList: Array<{ observation: string; reason: string }> = parsed.positiveIndicators || []
+    const redFlagList: Array<{ observation: string; observationTl?: string; reason: string; reasonTl?: string; severity: string }> = parsed.redFlags || []
+    const positiveList: Array<{ observation: string; observationTl?: string; reason: string; reasonTl?: string }> = parsed.positiveIndicators || []
     const canRead = parsed.canRead !== false  // default true
 
     scoreSteps = []
@@ -533,7 +546,7 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     claudeFindings = redFlagList.slice(0, 6).map((f, i) => ({
       id: `ai_flag_${i}`,
       en: `OBSERVATION: ${f.observation} — REASON: ${f.reason}`,
-      tl: `OBSERVATION: ${f.observation} — REASON: ${f.reason}`,
+      tl: `OBSERVATION: ${f.observationTl || f.observation} — REASON: ${f.reasonTl || f.reason}`,
       riskPoints: 0,
       severity: f.severity === 'critical' ? 'hard_red' : f.severity === 'high' ? 'high' : 'medium',
     }))
@@ -541,7 +554,7 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     positiveIndicators = positiveList.slice(0, 3).map((p, i) => ({
       id: `ai_pos_${i}`,
       en: `OBSERVATION: ${p.observation} — REASON: ${p.reason}`,
-      tl: `OBSERVATION: ${p.observation} — REASON: ${p.reason}`,
+      tl: `OBSERVATION: ${p.observationTl || p.observation} — REASON: ${p.reasonTl || p.reason}`,
       riskPoints: 0,
       severity: 'positive' as any,
     }))
@@ -670,7 +683,8 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     }]
   }
 
-  finalResult.aiInsights = aiInsights
+  finalResult.aiInsights   = aiInsights
+  finalResult.aiInsightsTl = aiInsightsTlArr
 
   const confidenceScore = computeConfidenceScore({
     claudeSucceeded: claudeFindings.length > 0 || positiveIndicators.length > 0 || entitySummary !== '',
@@ -734,5 +748,5 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     }
   }
 
-  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, confidenceScore, riskLevelLabel, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier })
+  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, confidenceScore, riskLevelLabel, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier, aiInsightsTl: aiInsightsTlArr })
 }

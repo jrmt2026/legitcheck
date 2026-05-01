@@ -156,10 +156,28 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
   const radius = 54
   const circumference = 2 * Math.PI * radius
   const [animatedOffset, setAnimatedOffset] = useState(circumference)
+  const [displayScore, setDisplayScore]     = useState(0)
 
   useEffect(() => {
-    const t = setTimeout(() => setAnimatedOffset(circumference - (score / 100) * circumference), 200)
-    return () => clearTimeout(t)
+    // Ring fill — delay 400ms so the hero settles first
+    const ringTimer = setTimeout(() => {
+      setAnimatedOffset(circumference - (score / 100) * circumference)
+    }, 400)
+
+    // Count-up number animation
+    let current = 0
+    const duration = 1200
+    const stepTime = 16
+    const increment = (score / duration) * stepTime
+    const countTimer = setTimeout(() => {
+      const iv = setInterval(() => {
+        current = Math.min(current + increment, score)
+        setDisplayScore(Math.round(current))
+        if (current >= score) clearInterval(iv)
+      }, stepTime)
+    }, 400)
+
+    return () => { clearTimeout(ringTimer); clearTimeout(countTimer) }
   }, [score, circumference])
 
   const isCritical = riskLevel === 'critical'
@@ -172,7 +190,7 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
   }[riskLevel]
 
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div className="relative inline-flex items-center justify-center animate-scale-in" style={{ animationDelay: '0.2s' }}>
       <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90">
         <circle
           cx="64" cy="64" r={radius}
@@ -188,12 +206,12 @@ function ScoreRing({ score, riskLevel }: { score: number; riskLevel: RiskLevel }
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={animatedOffset}
-          style={{ transition: 'stroke-dashoffset 0.4s cubic-bezier(0.16,1,0.3,1)' }}
+          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-4xl font-bold font-mono leading-none ${isCritical ? 'text-white' : RISK_THEMES[riskLevel].scoreColor}`}>
-          {score}
+        <span className={`text-4xl font-bold font-mono leading-none tabular-nums ${isCritical ? 'text-white' : RISK_THEMES[riskLevel].scoreColor}`}>
+          {displayScore}
         </span>
         <span className={`text-xs font-mono ${isCritical ? 'text-white/60' : 'text-ink-3'}`}>/100</span>
       </div>
@@ -310,8 +328,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
   const L           = (obj: { en: string; tl: string }) => obj[lang]
 
   const detectedPhones   = extractPhones(inputText)
-  const entitySummary    = result.aiInsights?.[0] || ''
-  const headlineFinding  = result.aiInsights?.[1] || ''
+  const entitySummary    = lang === 'tl' ? (result.aiInsightsTl?.[0] || result.aiInsights?.[0] || '') : (result.aiInsights?.[0] || '')
+  const headlineFinding  = lang === 'tl' ? (result.aiInsightsTl?.[1] || result.aiInsights?.[1] || '') : (result.aiInsights?.[1] || '')
   const officialResource = result.aiInsights?.[2] || ''
 
   const redFlags  = result.reasons.filter(r => r.severity !== 'positive')
@@ -403,65 +421,62 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
       </header>
 
       {/* ── Hero verdict section ───────────────────────────────────────────── */}
-      <div className={`${theme.bg} px-4 py-10 text-center ${isCritical ? 'animate-glow' : ''}`}>
+      <div className={`${theme.bg} px-4 py-10 text-center animate-fade-in ${isCritical ? 'animate-glow' : ''}`}>
         <div className="max-w-lg mx-auto">
 
           {/* Check complete status */}
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-5 border ${
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-5 border animate-slide-up ${
             isCritical ? 'bg-white/15 border-white/25 text-white' : 'bg-paper border-line text-ink-3'
-          }`}>
+          }`} style={{ animationDelay: '0.05s' }}>
             <CheckCircle2 size={12} />
             Analysis complete
           </div>
 
           {/* Risk level badge */}
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold mb-5 border ${
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold mb-5 border animate-slide-up ${
             isCritical
               ? 'bg-white/15 border-white/25 text-white'
               : isInconclusive
               ? 'bg-paper-2 border-line text-ink-2'
               : `${theme.accentBg} ${theme.accentText} border-transparent`
-          }`}>
+          }`} style={{ animationDelay: '0.1s' }}>
             <span>{isInconclusive ? '❓' : theme.emoji}</span>
             <span>{isInconclusive ? 'Inconclusive' : theme.label}</span>
           </div>
 
           {/* Score ring */}
-          <div className="flex flex-col items-center mb-6 animate-scale-in" style={{ animationDelay: '0.1s' }}>
+          <div className="flex flex-col items-center mb-6">
             <ScoreRing score={trustScore} riskLevel={riskLevel} />
-            <p className={`text-xs font-medium mt-2 ${isCritical ? 'text-white/50' : 'text-ink-3'}`}>
+            <p className={`text-xs font-medium mt-2 animate-fade-in ${isCritical ? 'text-white/50' : 'text-ink-3'}`} style={{ animationDelay: '0.5s' }}>
               Final Safety Score · {trustScore < 50 ? 'Lower = higher scam risk' : 'Higher = lower scam risk'}
             </p>
-            <p className={`text-[11px] mt-0.5 font-medium ${isCritical ? 'text-white/40' : 'text-ink-3'}`}>
-              This is your final result.
-            </p>
             {confidenceScore !== undefined && (
-              <div className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border ${
+              <div className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border animate-fade-in ${
                 isCritical
                   ? 'bg-white/10 border-white/20 text-white/70'
                   : 'bg-paper border-line text-ink-3'
-              }`}>
+              }`} style={{ animationDelay: '0.6s' }}>
                 Confidence: {confidenceScore}%
               </div>
             )}
           </div>
 
           {/* Headline */}
-          <h1 className={`text-2xl font-bold mb-2 leading-tight ${isCritical ? 'text-white' : theme.scoreColor}`}>
+          <h1 className={`text-2xl font-bold mb-2 leading-tight animate-slide-up ${isCritical ? 'text-white' : theme.scoreColor}`} style={{ animationDelay: '0.55s' }}>
             {L(result.headline)}
           </h1>
-          <p className={`text-sm mb-5 leading-relaxed max-w-sm mx-auto ${isCritical ? 'text-white/75' : `${theme.scoreColor} opacity-80`}`}>
+          <p className={`text-sm mb-5 leading-relaxed max-w-sm mx-auto animate-slide-up ${isCritical ? 'text-white/75' : `${theme.scoreColor} opacity-80`}`} style={{ animationDelay: '0.65s' }}>
             {L(result.subheadline)}
           </p>
 
           {/* Primary recommendation pill */}
-          <div className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm ${
+          <div className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm animate-slide-up ${
             isCritical
               ? 'bg-white text-brand-critical'
               : isInconclusive
               ? 'bg-ink/10 text-ink-2 border border-line'
               : `${theme.accentBg} ${theme.accentText}`
-          }`}>
+          }`} style={{ animationDelay: '0.75s' }}>
             <Zap size={14} />
             {isInconclusive
               ? (lang === 'tl' ? 'Inconclusive — kailangan ng manual na pag-verify.' : 'Inconclusive — manual verification needed.')

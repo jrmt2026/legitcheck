@@ -202,6 +202,7 @@ export default function BuyerPage() {
         analysisText   = data.extractedText || input
         if (data.scoreSteps) setScoreSteps(data.scoreSteps)
         if (data.tier) resultTier = data.tier
+        if (data.aiInsightsTl && finalResult) finalResult.aiInsightsTl = data.aiInsightsTl
       }
     } catch { /* fall through to local engine */ }
 
