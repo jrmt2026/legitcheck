@@ -225,7 +225,7 @@ const PRICING_PLANS = [
   { id: 'pack15', label: '15 checks', price: '₱199', highlight: false, desc: 'For families & small sellers' },
 ]
 
-function PaywallUpgrade({ isLoggedIn }: { isLoggedIn: boolean }) {
+function PaywallUpgrade({ isLoggedIn, hiddenCount = 0 }: { isLoggedIn: boolean; hiddenCount?: number }) {
   const [loading, setLoading] = useState<string | null>(null)
 
   async function handleBuy(planId: string) {
@@ -257,13 +257,22 @@ function PaywallUpgrade({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <div className="bg-ink rounded-2xl p-5 space-y-4">
-      <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mx-auto">
-          <Lock size={20} className="text-brand-green" />
+      {hiddenCount > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-brand-red/10 border border-brand-red/20 rounded-xl">
+          <AlertTriangle size={12} className="text-brand-red flex-shrink-0" />
+          <p className="text-xs text-brand-red font-semibold">
+            {hiddenCount} more red flag{hiddenCount !== 1 ? 's' : ''} found — unlock to see {hiddenCount === 1 ? 'it' : 'all of them'}
+          </p>
         </div>
-        <p className="text-base font-bold text-white">Unlock Full Analysis</p>
-        <p className="text-sm text-white/60 leading-relaxed">
-          Get the complete report — every red flag, score breakdown, evidence checklist, and exactly what to do next.
+      )}
+
+      <div className="text-center space-y-1.5">
+        <div className="w-10 h-10 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mx-auto">
+          <Lock size={18} className="text-brand-green" />
+        </div>
+        <p className="text-base font-bold text-white leading-snug">Before you send money,<br />make sure it&apos;s safe.</p>
+        <p className="text-sm text-white/50 leading-relaxed">
+          For less than ₱100, avoid losing thousands.
         </p>
       </div>
 
@@ -344,8 +353,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
 
   const isInconclusive = riskLevel === 'caution' && redFlags.length === 0 && positives.length === 0
 
-  const visibleRedFlags  = tier === 'guest' ? redFlags.slice(0, 1)  : tier === 'basic' ? redFlags.slice(0, 3)  : redFlags
-  const visiblePositives = tier === 'guest' ? []                     : tier === 'basic' ? positives.slice(0, 2) : positives
+  const visibleRedFlags  = tier === 'full' ? redFlags : redFlags.slice(0, 1)
+  const visiblePositives = tier === 'full' ? positives : []
 
   function toggleEvidence(i: number) {
     setCheckedEvidence(prev => {
@@ -606,7 +615,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
         )}
 
         {/* Official resource — basic and full only */}
-        {officialResource && tier !== 'guest' && (
+        {officialResource && tier === 'full' && (
           <div className="card flex gap-3 items-start bg-paper-2">
             <ShieldCheck size={15} className="text-brand-teal flex-shrink-0 mt-0.5" />
             <div>
@@ -644,7 +653,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
                   {parsed ? (
                     <>
                       <p className="text-sm font-semibold text-ink leading-snug">{parsed.observation}</p>
-                      {tier !== 'guest' && <p className="text-xs text-ink-3 leading-relaxed">{parsed.reason}</p>}
+                      {tier === 'full' && <p className="text-xs text-ink-3 leading-relaxed">{parsed.reason}</p>}
                     </>
                   ) : (
                     <p className="text-sm text-ink-2 leading-snug">{tier === 'guest' ? L(r).slice(0, 80) : L(r)}</p>
@@ -721,7 +730,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
         )}
 
         {/* Premium paywall gate */}
-        {tier === 'basic' && <PaywallUpgrade isLoggedIn={isLoggedIn} />}
+        {tier === 'basic' && <PaywallUpgrade isLoggedIn={isLoggedIn} hiddenCount={Math.max(0, redFlags.length - 1)} />}
 
         {/* Score breakdown — full only */}
         {tier === 'full' && scoreSteps.length > 1 && (
@@ -775,8 +784,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* Recommended next steps — basic and full */}
-        {tier !== 'guest' && (
+        {/* Recommended next steps — full only */}
+        {tier === 'full' && (
           <div className="card space-y-3">
             <p className="sec-label">{lang === 'tl' ? 'Inirerekomendang Susunod na Hakbang' : 'Recommended next steps'}</p>
             {(riskLevel === 'critical' || riskLevel === 'high') && (
@@ -831,8 +840,8 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           </div>
         )}
 
-        {/* Report channels — basic and full */}
-        {tier !== 'guest' && result.reportChannels.length > 0 && (
+        {/* Report channels — full only */}
+        {tier === 'full' && result.reportChannels.length > 0 && (
           <div className="card">
             <p className="sec-label">{lang === 'tl' ? 'Saan Mag-report' : 'Report to'}</p>
             <div className="space-y-2 mt-1">
@@ -891,7 +900,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
         )}
 
         {/* ── Official Verification Needed ──────────────────────────────── */}
-        {tier !== 'guest' && (() => {
+        {tier === 'full' && (() => {
           const sources = getVerificationSources(result.categoryId)
           if (!sources.length) return null
           return (
@@ -908,7 +917,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
         })()}
 
         {/* ── Reporting & Customer Service Directory ─────────────────────── */}
-        {tier !== 'guest' && (() => {
+        {tier === 'full' && (() => {
           const entries = getDirectoryEntries(result.categoryId)
           const tags    = CATEGORY_TAGS[result.categoryId] ?? []
           if (!entries.length) return null

@@ -38,18 +38,22 @@ export default function TermsPage() {
           },
           {
             title: '5. Free Use and Accounts',
-            body: 'You may use LegitCheck PH without an account for basic checks. Creating a free account gives you access to your check history and additional features. We reserve the right to modify or discontinue any feature at any time.',
+            body: 'You may use LegitCheck PH without an account for limited basic checks. Creating a free account gives you access to check history and 3 free basic checks per month. We reserve the right to modify or discontinue any feature at any time.',
           },
           {
-            title: '6. Privacy',
+            title: '6. Payment Terms and No-Refund Policy',
+            body: 'All payments are final and non-refundable, except where required by Philippine law or in cases of a verified duplicate or erroneous charge caused by a confirmed system or payment error. There are no refunds for disagreement with the AI-assisted result. Credits are non-transferable, are not convertible to cash, and are consumed upon use. By proceeding with any payment, you agree that the transaction is final and that credits purchased or used are non-refundable. Paid credits are valid for 12 months from purchase date. Earned credits are valid for 60 days from award date. Earliest-expiring credits are used first.',
+          },
+          {
+            title: '7. Privacy',
             body: 'Your use of LegitCheck PH is also governed by our Privacy Policy. By using this service, you agree to the collection and use of information as described therein.',
           },
           {
-            title: '7. Changes to These Terms',
+            title: '8. Changes to These Terms',
             body: 'We may update these Terms from time to time. Continued use of the service after changes means you accept the updated Terms.',
           },
           {
-            title: '8. Contact',
+            title: '9. Contact',
             body: 'For questions about these Terms, contact us at support@legitcheck.ph.',
           },
         ].map(({ title, body }) => (
