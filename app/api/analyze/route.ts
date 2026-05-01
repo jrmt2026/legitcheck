@@ -171,6 +171,7 @@ export async function POST(req: Request) {
   let tier: 'guest' | 'basic' | 'full' = 'guest'
   let authedUserId: string | null = null
   let isAdmin = false
+  let limitReached = false
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || req.headers.get('x-real-ip')
@@ -229,7 +230,7 @@ export async function POST(req: Request) {
           }
 
           if (checksUsed >= 3) {
-            return NextResponse.json({ limitReached: true, tier: 'basic', reason: 'monthly_limit' }, { status: 429 })
+            limitReached = true
           }
           tier = 'basic'
         }
@@ -741,7 +742,7 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
         .update({ credits_remaining: newBalance ?? 0 })
         .eq('id', authedUserId)
     }
-  } else if (!isAdmin && tier === 'basic') {
+  } else if (!isAdmin && tier === 'basic' && !limitReached) {
     const { data: prof } = await supabase
       .from('profiles')
       .select('free_checks_this_month')
@@ -755,5 +756,5 @@ ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as 
     }
   }
 
-  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, confidenceScore, riskLevelLabel, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier, aiInsightsTl: aiInsightsTlArr })
+  return NextResponse.json({ result: finalResult, extractedText: analysisText, fetchedUrl, trustScore, confidenceScore, riskLevelLabel, searchPerformed: !!searchContext, scoreSteps: scoreSteps || [], tier, aiInsightsTl: aiInsightsTlArr, limitReached })
 }
