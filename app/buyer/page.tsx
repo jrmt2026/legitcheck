@@ -194,9 +194,32 @@ export default function BuyerPage() {
       })
       const data = await res.json()
       if (res.status === 429 && data.limitReached) {
-        // Limit reached — run local engine for a preview score, then gate behind paywall
-        resultTier = data.tier as 'guest' | 'basic'
-        // fall through to local engine below
+        // Limit reached — show a neutral unverified result so we never show a
+        // false "safe" from the keyword engine (which doesn't analyze images or
+        // use AI). The user must upgrade for an accurate verdict.
+        resultTier  = data.tier as 'guest' | 'basic'
+        finalResult = {
+          score: 50,
+          color: 'yellow',
+          isHardRed: false,
+          headline:    { en: 'Not Analyzed — Free Limit Reached', tl: 'Hindi Na-analyze — Naubos na ang Libreng Check' },
+          subheadline: { en: 'Your free checks for this period are used up. Upgrade for a full AI-powered result on this item.', tl: 'Naubos na ang iyong libreng check ngayong buwan. Mag-upgrade para sa kumpletong resulta.' },
+          action:      { en: 'Upgrade for accurate result.', tl: 'Mag-upgrade para sa tamang resulta.' },
+          reasons: [{
+            id: 'limit_reached',
+            en: 'OBSERVATION: Free analysis limit reached — REASON: The result above is not an assessment of this item. We have not analyzed it yet. A premium check runs full Claude AI analysis, image reading, web search, and scam database lookup to give you an accurate verdict.',
+            tl: 'OBSERVATION: Naubos na ang libreng check — REASON: Hindi pa ito na-analyze. Ang premium check ay gumagamit ng buong AI analysis para sa tamang resulta.',
+            riskPoints: 0,
+            severity: 'medium' as const,
+          }],
+          aiInsights: [],
+          notification: { sms: { en: '', tl: '' }, chat: { en: '', tl: '' }, push: { en: '', tl: '' } },
+          reportChannels: [],
+          evidenceItems: [],
+          recommendedPlan: 'single' as const,
+          categoryId: detectCategory(analysisText),
+          confidenceScore: 0,
+        }
       } else if (res.ok) {
         finalResult    = data.result
         analysisText   = data.extractedText || input
