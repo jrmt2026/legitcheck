@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Clock, ChevronRight, Settings, ShieldCheck, Plus } from 'lucide-react'
+import { Search, Clock, ChevronRight, Settings, ShieldCheck, Plus, Flag } from 'lucide-react'
 import ScamShieldScore from '@/components/ScamShieldScore'
 
 export default async function DashboardPage() {
@@ -30,8 +30,25 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
-  const { data: premiumCredits } = await supabase
-    .rpc('get_premium_credits', { p_user_id: user.id })
+  const [
+    { data: premiumCredits },
+    { data: myReports },
+  ] = await Promise.all([
+    supabase.rpc('get_premium_credits', { p_user_id: user.id }),
+    supabase.from('scam_reports')
+      .select('id, status, created_at')
+      .eq('reporter_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20),
+  ])
+
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
+  const acceptedThisMonth = (myReports ?? []).filter(
+    r => r.status === 'accepted' && new Date(r.created_at) >= startOfMonth
+  ).length
+  const reportProgressToCredit = acceptedThisMonth % 3
 
   const colorMap: Record<string, { bg: string; text: string; label: string }> = {
     green:  { bg: 'bg-brand-green-light',  text: 'text-brand-green-dark',  label: 'Low risk'     },
@@ -83,12 +100,14 @@ export default async function DashboardPage() {
                 <div className="text-xs text-white/40">Full AI analysis · all red flags</div>
               </div>
             </div>
-            <Link
-              href="/dashboard/pricing"
-              className="text-xs font-semibold text-white/60 hover:text-white transition-colors flex items-center gap-1"
-            >
-              <Plus size={12} /> Top up
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard/credits" className="text-xs text-white/40 hover:text-white/60 transition-colors">
+                History
+              </Link>
+              <Link href="/dashboard/pricing" className="text-xs font-semibold text-white/60 hover:text-white transition-colors flex items-center gap-1">
+                <Plus size={12} /> Top up
+              </Link>
+            </div>
           </div>
         ) : (
           <Link
@@ -105,6 +124,30 @@ export default async function DashboardPage() {
               </div>
             </div>
             <ChevronRight size={16} className="text-white/30 group-hover:text-white/60 transition-colors" />
+          </Link>
+        )}
+
+        {/* Community reward progress */}
+        {(myReports ?? []).length > 0 && (
+          <Link href="/dashboard/credits" className="block bg-paper border border-line rounded-2xl px-4 py-3.5 hover:bg-paper-2 transition-all">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Flag size={13} className="text-brand-green" />
+                <span className="text-xs font-semibold text-ink">Earn free premium checks</span>
+              </div>
+              <span className="text-xs text-ink-3">{reportProgressToCredit}/3 accepted</span>
+            </div>
+            <div className="w-full h-1.5 bg-paper-2 border border-line rounded-full overflow-hidden">
+              <div
+                className="h-full bg-brand-green rounded-full transition-all duration-500"
+                style={{ width: `${(reportProgressToCredit / 3) * 100}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-ink-3 mt-1.5">
+              {3 - reportProgressToCredit === 0
+                ? 'Credit being processed…'
+                : `${3 - reportProgressToCredit} more accepted report${3 - reportProgressToCredit !== 1 ? 's' : ''} needed`}
+            </p>
           </Link>
         )}
 

@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import {
   CheckCircle, XCircle, ChevronDown, ShieldAlert, Loader2,
-  Flag, Clock, MessageSquare, RotateCcw,
+  Flag, Clock, MessageSquare, RotateCcw, Users, DollarSign, TrendingUp,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-type MainTab   = 'sellers' | 'reports'
+type MainTab   = 'stats' | 'reports' | 'sellers'
 type BadgeLevel = 'pending' | 'id_verified' | 'business_verified' | 'fully_verified' | 'rejected'
 type ReportStatus = 'pending' | 'approved' | 'rejected'
 type ReportFilter = 'pending' | 'approved' | 'rejected' | 'all'
@@ -41,7 +41,9 @@ const STATUS_LABEL: Record<ReportStatus, string> = {
 }
 
 export default function AdminPage() {
-  const [tab, setTab]                   = useState<MainTab>('reports')
+  const [tab, setTab]                   = useState<MainTab>('stats')
+  const [stats, setStats]               = useState<any>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
   const [sellers, setSellers]           = useState<any[]>([])
   const [reports, setReports]           = useState<any[]>([])
   const [counts, setCounts]             = useState<ReportCounts>({ pending: 0, approved: 0, rejected: 0, all: 0 })
@@ -73,8 +75,18 @@ export default function AdminPage() {
     setLoading(false)
   }
 
+  async function loadStats() {
+    setStatsLoading(true)
+    const res = await fetch('/api/admin/stats')
+    if (res.status === 403) { toast.error('Access denied'); setStatsLoading(false); return }
+    const d = await res.json()
+    setStats(d)
+    setStatsLoading(false)
+  }
+
   useEffect(() => {
     if (tab === 'sellers') loadSellers()
+    else if (tab === 'stats') loadStats()
     else loadReports()
   }, [tab])
 
@@ -148,12 +160,15 @@ export default function AdminPage() {
             )}
           </div>
           <div className="flex gap-1 bg-paper-2 border border-line rounded-full p-0.5">
-            {(['reports', 'sellers'] as MainTab[]).map(t => (
+            {([['stats', '📊 Stats'], ['reports', '🚩 Reports'], ['sellers', '🏅 Sellers']] as [MainTab, string][]).map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   tab === t ? 'bg-paper text-ink shadow-sm border border-line' : 'text-ink-3'
                 }`}>
-                {t === 'sellers' ? '🏅 Sellers' : '🚩 Reports'}
+                {label}
+                {t === 'reports' && counts.pending > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-[9px] font-bold bg-brand-yellow text-ink rounded-full">{counts.pending}</span>
+                )}
               </button>
             ))}
           </div>
@@ -161,6 +176,85 @@ export default function AdminPage() {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
+
+        {/* ── STATS TAB ────────────────────────────────────────────────────── */}
+        {tab === 'stats' && (
+          <div className="space-y-5">
+            {statsLoading || !stats ? (
+              <div className="flex justify-center py-16 text-ink-3"><Loader2 size={24} className="animate-spin" /></div>
+            ) : (
+              <>
+                {/* Stat cards */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { icon: Users,       label: 'Total users',        value: stats.totalUsers?.toLocaleString() ?? '—' },
+                    { icon: TrendingUp,  label: 'Checks today',       value: stats.checksToday?.toLocaleString() ?? '—' },
+                    { icon: TrendingUp,  label: 'Checks this month',  value: stats.checksThisMonth?.toLocaleString() ?? '—' },
+                    { icon: Flag,        label: 'Pending reports',    value: stats.pendingReports?.toLocaleString() ?? '—',
+                      highlight: (stats.pendingReports ?? 0) > 0 },
+                    { icon: DollarSign,  label: 'Revenue this month', value: `₱${((stats.revenueThisMonth ?? 0) / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` },
+                    { icon: DollarSign,  label: 'Revenue all-time',   value: `₱${((stats.revenueAllTime ?? 0) / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` },
+                  ].map(({ icon: Icon, label, value, highlight }) => (
+                    <div key={label} className={`rounded-2xl border p-4 ${highlight ? 'bg-brand-red-light border-brand-red/20' : 'bg-paper border-line'}`}>
+                      <Icon size={14} className={`mb-2 ${highlight ? 'text-brand-red-dark' : 'text-ink-3'}`} />
+                      <div className={`text-xl font-bold font-mono ${highlight ? 'text-brand-red-dark' : 'text-ink'}`}>{value}</div>
+                      <div className={`text-xs mt-0.5 ${highlight ? 'text-brand-red-dark opacity-70' : 'text-ink-3'}`}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recent signups */}
+                <div>
+                  <p className="sec-label mb-2">Recent signups</p>
+                  <div className="bg-paper border border-line rounded-2xl overflow-hidden">
+                    {stats.recentUsers.map((u: any, i: number) => (
+                      <div key={u.id} className={`flex items-center gap-3 px-4 py-3 text-sm ${i !== 0 ? 'border-t border-line' : ''}`}>
+                        <div className="w-7 h-7 rounded-full bg-paper-2 border border-line flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-ink-2">
+                          {(u.email?.[0] ?? '?').toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-ink font-medium text-xs truncate">{u.email}</div>
+                          {u.full_name && <div className="text-[10px] text-ink-3 truncate">{u.full_name}</div>}
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-[10px] text-ink-3">{new Date(u.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}</div>
+                          {(u.credits_remaining ?? 0) > 0 && (
+                            <div className="text-[10px] font-semibold text-brand-green mt-0.5">{u.credits_remaining} cr</div>
+                          )}
+                          {(u.free_checks_this_month ?? 0) > 0 && (
+                            <div className="text-[10px] text-ink-3 mt-0.5">{u.free_checks_this_month} free</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent payments */}
+                <div>
+                  <p className="sec-label mb-2">Recent payments</p>
+                  <div className="bg-paper border border-line rounded-2xl overflow-hidden">
+                    {stats.recentPayments.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-sm text-ink-3">No payments yet</div>
+                    ) : stats.recentPayments.map((p: any, i: number) => (
+                      <div key={p.id} className={`flex items-center gap-3 px-4 py-3 ${i !== 0 ? 'border-t border-line' : ''}`}>
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${p.status === 'paid' ? 'bg-brand-green' : p.status === 'pending' ? 'bg-brand-yellow' : 'bg-brand-red'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-ink">{p.plan_id}</div>
+                          <div className="text-[10px] text-ink-3 font-mono truncate">{p.reference_no}</div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-sm font-bold text-ink font-mono">₱{((p.amount_cents ?? 0) / 100).toFixed(2)}</div>
+                          <div className="text-[10px] text-ink-3">{new Date(p.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* ── REPORTS TAB ─────────────────────────────────────────────────── */}
         {tab === 'reports' && (

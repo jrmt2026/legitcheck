@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS public.anonymous_checks (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.anonymous_checks ENABLE ROW LEVEL SECURITY;
+-- No client policies — service role only. Clients cannot read or write this table.
+
 CREATE INDEX IF NOT EXISTS idx_anon_checks_ip_hash ON public.anonymous_checks (ip_hash);
 CREATE INDEX IF NOT EXISTS idx_anon_checks_created ON public.anonymous_checks (created_at DESC);
 

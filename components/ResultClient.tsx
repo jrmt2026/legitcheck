@@ -272,7 +272,7 @@ function PaywallUpgrade({ isLoggedIn, hiddenCount = 0 }: { isLoggedIn: boolean; 
         </div>
         <p className="text-base font-bold text-white leading-snug">Before you send money,<br />make sure it&apos;s safe.</p>
         <p className="text-sm text-white/50 leading-relaxed">
-          For less than ₱100, avoid losing thousands.
+          For {PRICING_PLANS[0].price} — avoid losing thousands.
         </p>
       </div>
 
