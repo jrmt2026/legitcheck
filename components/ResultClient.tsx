@@ -310,6 +310,13 @@ function PaywallUpgrade({ isLoggedIn }: { isLoggedIn: boolean }) {
       <p className="text-center text-xs text-white/30">
         Secure checkout via GCash, Maya, or card · Credits never expire
       </p>
+
+      <div className="border-t border-white/10 pt-3 space-y-2">
+        <p className="text-xs text-white/40 text-center">Think it's a scam? Report it — it's free and helps protect others.</p>
+        <Link href="/report" className="w-full bg-white/8 text-white/70 font-medium rounded-xl py-2.5 flex items-center justify-center gap-2 hover:bg-white/15 transition-all text-sm">
+          <Flag size={13} /> Report as scam — free
+        </Link>
+      </div>
     </div>
   )
 }
@@ -650,26 +657,28 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
 
         {/* Guest signup gate */}
         {tier === 'guest' && (
-          <div className="bg-ink rounded-2xl p-5 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mx-auto">
-              <Lock size={20} className="text-brand-green" />
-            </div>
-            <div>
-              <p className="text-base font-bold text-white mb-1">
-                {redFlags.length > 1
-                  ? `${redFlags.length - 1} more red flag${redFlags.length - 1 > 1 ? 's' : ''} found`
-                  : 'See the full analysis'}
-              </p>
-              <p className="text-sm text-white/60 leading-relaxed">
-                Sign up free to unlock the full report — score breakdown, all red flags, and what to do next.
-              </p>
+          <div className="bg-ink rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-brand-green/20 border border-brand-green/30 flex items-center justify-center flex-shrink-0">
+                <Lock size={18} className="text-brand-green" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Free limit reached</p>
+                <p className="text-xs text-white/50 mt-0.5">Sign up for 3 free checks every month</p>
+              </div>
             </div>
             <div className="space-y-2">
-              <Link href="/auth/signup" className="w-full bg-brand-green text-white font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity text-sm">
-                <UserPlus size={15} /> Create free account
+              <Link href="/auth/signup" className="w-full bg-brand-green text-white font-bold rounded-xl py-3 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity text-sm">
+                <UserPlus size={14} /> Create free account
               </Link>
-              <Link href="/auth/login" className="w-full bg-white/10 text-white font-medium rounded-xl py-3 flex items-center justify-center hover:bg-white/20 transition-all text-sm">
+              <Link href="/auth/login" className="w-full bg-white/8 text-white/70 font-medium rounded-xl py-2.5 flex items-center justify-center hover:bg-white/15 transition-all text-sm">
                 Log in
+              </Link>
+            </div>
+            <div className="border-t border-white/10 pt-3 space-y-2">
+              <p className="text-xs text-white/40 text-center">Think it's a scam? Report it — it's free and helps protect others.</p>
+              <Link href="/report" className="w-full bg-white/8 text-white/70 font-medium rounded-xl py-2.5 flex items-center justify-center gap-2 hover:bg-white/15 transition-all text-sm">
+                <Flag size={13} /> Report as scam — free
               </Link>
             </div>
           </div>
