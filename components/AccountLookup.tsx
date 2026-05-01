@@ -50,7 +50,7 @@ export default function AccountLookup() {
       <div className="px-4 pt-4 pb-3">
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-3 font-mono mb-2">Quick Account Check</p>
         <p className="text-sm text-ink-2 mb-3 leading-snug">
-          Check if a GCash number, bank account, or seller profile has been reported before you send money.
+          Check if an account number, phone number, or seller profile has been flagged in community reports.
         </p>
         <div className="flex gap-2">
           <input

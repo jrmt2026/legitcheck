@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, ArrowRight, X, Loader2, ImagePlus, RotateCcw,
-  ShieldCheck, Lock, AlertTriangle, Clock,
+  ShieldCheck, Lock, AlertTriangle, Clock, LogOut, User,
 } from 'lucide-react'
 import AccountLookup from '@/components/AccountLookup'
 import { detectCategory, detectSignals, computeRisk } from '@/lib/decisionEngine'
@@ -30,7 +30,7 @@ const CATEGORIES: { id: CategoryId; icon: string; label: string }[] = [
 ]
 
 const EXAMPLES = [
-  { key: 'fb',     emoji: '🛍️', label: 'FB Seller',    text: 'Seller: Hi po! Available pa po yung bag. GCash nalang po tayo para mas mabilis. Account ko: 09171234567 - J. Santos. Rush po kasi maraming nagtatanong. Pag di ka nagbayad ngayon, ibebenta ko na sa iba.' },
+  { key: 'fb',     emoji: '🛍️', label: 'Online Seller', text: 'Seller: Hi po! Available pa po yung bag. E-wallet nalang po tayo para mas mabilis. Account ko: 09171234567 - J. Santos. Rush po kasi maraming nagtatanong. Pag di ka nagbayad ngayon, ibebenta ko na sa iba.' },
   { key: 'gov',    emoji: '📱', label: "Gov't SMS",     text: 'Traffic Authority: Mahal na motorista, mayroon kang unpaid traffic violation na nagkakahalaga ng ₱5,000. Ang iyong lisensya ay sususpindihin sa loob ng 48 oras. I-click ang link para bayaran ngayon: http://gov-fines-ph.com/pay' },
   { key: 'invest', emoji: '💰', label: 'Investment',   text: 'Kumita na ng 30% monthly ang aming mga investors! Guaranteed po ang return. Mag-invite ka pa ng friends, may komisyon ka pa. Mag-invest ka na ngayon, last slots na lang. Withdrawal fee lang ng ₱2,000 para ma-release ang profit mo.' },
   { key: 'land',   emoji: '🏠', label: 'Land Deal',    text: "Sir/Ma'am, yung lote sa Cavite, 300sqm, ₱2M lang. Mag-deposit na po kayo ng ₱100K para ma-hold. Title at docs ipapakita ko pagkatapos ng payment." },
@@ -91,6 +91,7 @@ export default function BuyerPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [tab, setTab]                             = useState<Tab>('check')
+  const [userInitials, setUserInitials]           = useState('')
   const [step, setStep]                           = useState<Step>('input')
   const [input, setInput]                         = useState('')
   const [selectedCategory, setSelectedCategory]   = useState<CategoryId | null>(null)
@@ -115,12 +116,23 @@ export default function BuyerPage() {
     if (recheck) setInput(decodeURIComponent(recheck))
     if (params.get('tab') === 'history') setTab('history')
 
-    createClient().auth.getUser().then(({ data: { user } }) => setIsAuth(!!user))
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      setIsAuth(!!user)
+      if (user) {
+        const name = user.user_metadata?.full_name || user.email || ''
+        setUserInitials(name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?')
+      }
+    })
   }, [])
 
   useEffect(() => {
     if (tab === 'history') loadHistory()
   }, [tab])
+
+  async function handleSignOut() {
+    await createClient().auth.signOut()
+    window.location.href = '/'
+  }
 
   async function loadHistory() {
     setLoadingHistory(true)
@@ -309,7 +321,7 @@ export default function BuyerPage() {
             <button onClick={reset} className="text-white/60 hover:text-white transition-colors" aria-label="Back">
               <ArrowLeft size={20} />
             </button>
-            <Link href="/" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
+            <Link href="/buyer" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
               LegitCheck <span className="font-light opacity-50">PH</span>
             </Link>
           </div>
@@ -394,19 +406,21 @@ export default function BuyerPage() {
       {/* Header + Tab bar — single sticky block */}
       <div className="sticky top-0 z-40">
         <header className="bg-ink px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="text-white/60 hover:text-white transition-colors">
-            <ArrowLeft size={20} />
-          </Link>
-          <Link href="/" className="text-lg font-bold text-white tracking-tight flex-1 hover:opacity-80 transition-opacity">
+          <Link href="/buyer" className="text-lg font-bold text-white tracking-tight flex-1 hover:opacity-80 transition-opacity">
             LegitCheck <span className="font-light opacity-50">PH</span>
           </Link>
           {isAuth ? (
-            <Link
-              href="/sos"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red/20 text-red-300 text-sm font-medium hover:bg-brand-red/30 transition-all"
-            >
-              🚨 SOS
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/sos" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red/20 text-red-300 text-sm font-medium hover:bg-brand-red/30 transition-all">
+                🚨 SOS
+              </Link>
+              <Link href="/profile" className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors flex-shrink-0">
+                <span className="text-[11px] font-bold text-white">{userInitials || <User size={13} />}</span>
+              </Link>
+              <button onClick={handleSignOut} className="text-white/30 hover:text-white/70 transition-colors" aria-label="Sign out">
+                <LogOut size={16} />
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/auth/login" className="text-sm text-white/60 hover:text-white transition-colors px-2 py-1.5">
@@ -465,7 +479,7 @@ export default function BuyerPage() {
             <textarea
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="I-paste dito ang message, URL, number, profile link, o kahit anong kahina-hinala.&#10;&#10;Examples: GCash number · suspicious SMS · seller profile · investment offer · website link"
+              placeholder="I-paste dito ang message, URL, number, profile link, o kahit anong kahina-hinala.&#10;&#10;Examples: suspicious SMS · seller profile · investment offer · website link · job offer"
               rows={7}
               className="w-full px-5 pt-5 pb-3 text-base text-ink bg-transparent focus:outline-none placeholder-ink-3 resize-none leading-relaxed"
             />

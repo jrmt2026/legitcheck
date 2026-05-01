@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Clock, ChevronRight, Settings, ShieldCheck, Plus, Flag } from 'lucide-react'
+import SignOutButton from '@/components/SignOutButton'
 import ScamShieldScore from '@/components/ScamShieldScore'
 
 export default async function DashboardPage() {
@@ -67,15 +68,18 @@ export default async function DashboardPage() {
 
       {/* Header */}
       <header className="bg-ink sticky top-0 z-50 px-4 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
+        <Link href="/buyer" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
           LegitCheck <span className="font-light opacity-50">PH</span>
         </Link>
-        <Link href="/profile" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
-            <span className="text-xs font-bold text-white">{initials}</span>
-          </div>
-          <Settings size={15} className="text-white/40 group-hover:text-white transition-colors" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/profile" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+              <span className="text-xs font-bold text-white">{initials}</span>
+            </div>
+            <Settings size={15} className="text-white/40 group-hover:text-white transition-colors" />
+          </Link>
+          <SignOutButton />
+        </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-5">

@@ -5,19 +5,19 @@ import { useRouter } from 'next/navigation'
 import { ShieldCheck, ArrowRight, Lock, CheckCircle, Zap } from 'lucide-react'
 
 const LIVE_FEED = [
-  { emoji: '🛍️', label: 'FB Seller',    result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
-  { emoji: '📱', label: "Gov't SMS",     result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
-  { emoji: '✅', label: 'Online Order', result: 'LOW RISK', color: 'text-white/60',   bg: 'bg-white/5 border-white/15'               },
-  { emoji: '💰', label: 'Investment',   result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
-  { emoji: '✈️', label: 'Job Agency',   result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
-  { emoji: '🌐', label: 'Website Link', result: 'CAUTION',  color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20'    },
+  { emoji: '🛍️', label: 'Online Seller', result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
+  { emoji: '📱', label: "Gov't SMS",      result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
+  { emoji: '✅', label: 'Online Order',  result: 'LOW RISK', color: 'text-white/60',   bg: 'bg-white/5 border-white/15'               },
+  { emoji: '💰', label: 'Investment',    result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
+  { emoji: '✈️', label: 'Job Agency',    result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
+  { emoji: '🌐', label: 'Website Link',  result: 'CAUTION',  color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20'    },
 ]
 
 const SAMPLES = [
-  { emoji: '🛍️', label: 'FB Seller',   text: 'Seller: Hi po! Available pa po yung bag. GCash nalang po tayo para mas mabilis. Account ko: 09171234567 - J. Santos. Rush po kasi maraming nagtatanong. Pag di ka nagbayad ngayon, ibebenta ko na sa iba.' },
-  { emoji: '📱', label: "Gov't SMS",    text: 'Traffic Authority: Mahal na motorista, mayroon kang unpaid traffic violation na nagkakahalaga ng ₱5,000. Ang iyong lisensya ay sususpindihin sa loob ng 48 oras. I-click ang link para bayaran ngayon: http://gov-fines-ph.com/pay' },
-  { emoji: '💰', label: 'Investment',  text: 'Kumita na ng 30% monthly ang aming mga investors! Guaranteed po ang return. Mag-invite ka pa ng friends, may komisyon ka pa. Mag-invest ka na ngayon, last slots na lang. Withdrawal fee lang ng ₱2,000 para ma-release ang profit mo.' },
-  { emoji: '✈️', label: 'Job Offer',   text: 'Congratulations! Qualified ka sa deployment sa Dubai. Processing fee lang: ₱15,000 via GCash bago maibigay ang kontrata. Urgent — kailangan bukas na para ma-slot ka.' },
+  { emoji: '🛍️', label: 'Online Seller', text: 'Seller: Hi po! Available pa po yung bag. E-wallet nalang po tayo para mas mabilis. Account ko: 09171234567 - J. Santos. Rush po kasi maraming nagtatanong. Pag di ka nagbayad ngayon, ibebenta ko na sa iba.' },
+  { emoji: '📱', label: "Gov't SMS",      text: 'Traffic Authority: Mahal na motorista, mayroon kang unpaid traffic violation na nagkakahalaga ng ₱5,000. Ang iyong lisensya ay sususpindihin sa loob ng 48 oras. I-click ang link para bayaran ngayon: http://gov-fines-ph.com/pay' },
+  { emoji: '💰', label: 'Investment',    text: 'Kumita na ng 30% monthly ang aming mga investors! Guaranteed po ang return. Mag-invite ka pa ng friends, may komisyon ka pa. Mag-invest ka na ngayon, last slots na lang. Withdrawal fee lang ng ₱2,000 para ma-release ang profit mo.' },
+  { emoji: '✈️', label: 'Job Offer',     text: 'Congratulations! Qualified ka sa deployment sa Dubai. Processing fee lang: ₱15,000 bago maibigay ang kontrata. Urgent — kailangan bukas na para ma-slot ka.' },
 ]
 
 export default function HeroSection() {

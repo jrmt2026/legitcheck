@@ -68,7 +68,7 @@ export default function ResultPage() {
           <Link href="/buyer?tab=history" className="text-white/60 hover:text-white transition-colors" aria-label="Back to history">
             <ArrowLeft size={20} />
           </Link>
-          <Link href="/" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
+          <Link href="/buyer" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
             LegitCheck <span className="font-light opacity-50">PH</span>
           </Link>
         </div>
