@@ -412,7 +412,7 @@ export default function BuyerPage() {
 
       {/* ── Check tab ─────────────────────────────────────────────────────── */}
       {tab === 'check' && (
-        <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
+        <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
 
           <div>
             <h1 className="text-2xl font-bold text-ink tracking-tight">Safe ba 'to? Check muna.</h1>
@@ -428,52 +428,22 @@ export default function BuyerPage() {
             </div>
           )}
 
-          {/* Main unified input */}
-          <div>
+          {/* Main input card — white with shadow so it lifts off the bg */}
+          <div className="bg-white rounded-3xl border border-ink/10 shadow-sm overflow-hidden">
+
+            {/* Textarea */}
             <textarea
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="I-paste dito ang message, URL, number, profile link, o kahit anong kahina-hinala.&#10;&#10;Examples: GCash number · suspicious SMS · seller profile · investment offer · website link"
               rows={7}
-              className="w-full border-2 border-line rounded-2xl px-4 py-4 text-base text-ink bg-paper focus:outline-none focus:border-ink placeholder-ink-3 transition-colors resize-none leading-relaxed"
+              className="w-full px-5 pt-5 pb-3 text-base text-ink bg-transparent focus:outline-none placeholder-ink-3 resize-none leading-relaxed"
             />
-            <div className="mt-2 flex items-start gap-2 bg-paper-2 border border-line rounded-xl px-3 py-2.5">
-              <Lock size={12} className="text-ink-3 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-ink-3 leading-snug">
-                <strong className="text-ink-2">Do not paste OTPs, PINs, passwords, or full card numbers.</strong>
-              </p>
-            </div>
-          </div>
 
-          {/* Optional: narrow down the type */}
-          <div>
-            <p className="text-xs text-ink-3 font-medium mb-2 flex items-center gap-1.5">
-              <span className="bg-line text-ink-3 px-1.5 py-0.5 rounded text-[10px] font-bold">OPTIONAL</span>
-              What type is this? (auto-detected if blank)
-            </p>
-            <div className="relative">
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide"
-                style={{ maskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 40px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 40px), transparent 100%)' }}>
-                {CATEGORIES.map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedCategory(prev => prev === c.id ? null : c.id)}
-                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all text-xs font-medium whitespace-nowrap ${
-                      selectedCategory === c.id
-                        ? 'border-ink bg-ink text-white'
-                        : 'border-line bg-paper hover:border-ink-3 text-ink-2'
-                    }`}
-                  >
-                    <span>{c.icon}</span> {c.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+            {/* Divider */}
+            <div className="border-t border-ink/8 mx-4" />
 
-          {/* File upload */}
-          <div>
-            <p className="sec-label">Screenshots (optional, up to 4)</p>
+            {/* Upload row */}
             <input
               ref={fileInputRef}
               type="file"
@@ -482,42 +452,75 @@ export default function BuyerPage() {
               className="hidden"
               onChange={handleFilesSelected}
             />
-            {uploadedFiles.length < 4 && (
+            <div className="px-4 py-3 flex items-center justify-between">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-3 border-2 border-dashed border-line rounded-2xl py-5 text-ink-3 hover:border-ink-3 hover:bg-paper transition-all"
+                className="flex items-center gap-2 text-sm font-medium text-ink-3 hover:text-ink transition-colors"
               >
-                <ImagePlus size={18} />
-                <span className="text-sm font-medium">
-                  {uploadedFiles.length === 0 ? 'Upload screenshots' : `Add more (${uploadedFiles.length}/4)`}
-                </span>
+                <ImagePlus size={16} className="text-brand-green" />
+                {uploadedFiles.length === 0
+                  ? 'Add screenshots'
+                  : `${uploadedFiles.length} screenshot${uploadedFiles.length > 1 ? 's' : ''} added`}
               </button>
-            )}
+              <div className="flex items-center gap-1.5">
+                <Lock size={11} className="text-ink-3" />
+                <span className="text-xs text-ink-3">No OTPs or PINs</span>
+              </div>
+            </div>
+
+            {/* Uploaded previews */}
             {uploadedFiles.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-4 gap-2 px-4 pb-3">
                 {uploadedFiles.map((file, i) => (
-                  <div key={i} className="relative rounded-2xl overflow-hidden border border-line bg-paper group animate-pop-in">
+                  <div key={i} className="relative rounded-xl overflow-hidden border border-line group animate-pop-in aspect-square">
                     {file.type.startsWith('image/') ? (
-                      <img src={uploadedPreviews[i]} alt={file.name} className="w-full h-32 object-cover" />
+                      <img src={uploadedPreviews[i]} alt={file.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-32 flex flex-col items-center justify-center gap-2 bg-paper-2">
-                        <Loader2 size={24} className="text-ink-3" />
-                        <span className="text-xs text-ink-3 px-2 text-center truncate w-full">{file.name}</span>
+                      <div className="w-full h-full flex items-center justify-center bg-paper-2">
+                        <Loader2 size={16} className="text-ink-3" />
                       </div>
                     )}
                     <button
                       onClick={() => removeFile(i)}
-                      className="absolute top-2 right-2 w-6 h-6 bg-ink/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 w-5 h-5 bg-ink/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X size={12} />
+                      <X size={9} />
                     </button>
                   </div>
                 ))}
+                {uploadedFiles.length < 4 && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square rounded-xl border-2 border-dashed border-line flex items-center justify-center hover:border-ink-3 transition-colors"
+                  >
+                    <ImagePlus size={16} className="text-ink-3" />
+                  </button>
+                )}
               </div>
             )}
-            <div className="mt-2 flex items-center gap-1.5">
-              <ShieldCheck size={12} className="text-brand-green" />
-              <p className="text-xs text-ink-3">Screenshots are analyzed for risk signals only — not stored permanently.</p>
+          </div>
+
+          {/* Category selector */}
+          <div>
+            <p className="text-xs text-ink-3 font-medium mb-2 flex items-center gap-1.5">
+              <span className="bg-line text-ink-3 px-1.5 py-0.5 rounded text-[10px] font-bold">OPTIONAL</span>
+              What type is this? (auto-detected if blank)
+            </p>
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide"
+              style={{ maskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 40px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 40px), transparent 100%)' }}>
+              {CATEGORIES.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCategory(prev => prev === c.id ? null : c.id)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all text-xs font-medium whitespace-nowrap ${
+                    selectedCategory === c.id
+                      ? 'border-ink bg-ink text-white'
+                      : 'border-line bg-white shadow-sm hover:border-ink-3 text-ink-2'
+                  }`}
+                >
+                  <span>{c.icon}</span> {c.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -529,7 +532,7 @@ export default function BuyerPage() {
                 <button
                   key={ex.key}
                   onClick={() => setInput(ex.text)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-line bg-paper text-sm text-ink-2 hover:bg-ink hover:text-white hover:border-ink transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-line bg-white shadow-sm text-sm text-ink-2 hover:bg-ink hover:text-white hover:border-ink transition-all"
                 >
                   <span>{ex.emoji}</span> {ex.label}
                 </button>
@@ -537,14 +540,14 @@ export default function BuyerPage() {
             </div>
           </div>
 
-          {/* Sticky analyze button */}
+          {/* Analyze button */}
           <div className="sm:static fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 sm:p-0 p-4 bg-paper-2/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none border-t border-line sm:border-0 z-40">
             <button
               onClick={handleAnalyze}
               disabled={!input.trim() && uploadedFiles.length === 0}
-              className="w-full bg-ink text-white text-base font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full bg-brand-green text-white text-base font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-brand-green/20"
             >
-              Analyze Risk <ArrowRight size={18} />
+              <ShieldCheck size={18} /> Analyze Risk <ArrowRight size={18} />
             </button>
           </div>
           <div className="h-44 sm:hidden" />
