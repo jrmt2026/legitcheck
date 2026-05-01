@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShieldCheck, ArrowRight, Lock, CheckCircle, Zap } from 'lucide-react'
+import { ShieldCheck, ArrowRight, Lock, CheckCircle, Zap, ImagePlus, X } from 'lucide-react'
 
 const LIVE_FEED = [
   { emoji: '🛍️', label: 'Online Seller', result: 'SCAM',     color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20'          },
@@ -23,11 +23,14 @@ const SAMPLES = [
 export default function HeroSection() {
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [text, setText]         = useState('')
-  const [count, setCount]       = useState(2847)
-  const [feedIdx, setFeedIdx]   = useState(0)
-  const [visible, setVisible]   = useState(true)
+  const [text, setText]                         = useState('')
+  const [count, setCount]                       = useState(2847)
+  const [feedIdx, setFeedIdx]                   = useState(0)
+  const [visible, setVisible]                   = useState(true)
+  const [uploadedFiles, setUploadedFiles]       = useState<File[]>([])
+  const [uploadedPreviews, setUploadedPreviews] = useState<string[]>([])
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -44,9 +47,42 @@ export default function HeroSection() {
     return () => clearInterval(t)
   }, [])
 
-  function handleAnalyze() {
-    if (!text.trim()) return
-    router.push(`/buyer?recheck=${encodeURIComponent(text.trim())}`)
+  function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const toAdd = files.slice(0, 4 - uploadedFiles.length)
+    setUploadedFiles(prev => [...prev, ...toAdd])
+    setUploadedPreviews(prev => [...prev, ...toAdd.map(f => URL.createObjectURL(f))])
+    e.target.value = ''
+  }
+
+  function removeFile(i: number) {
+    URL.revokeObjectURL(uploadedPreviews[i])
+    setUploadedFiles(prev => prev.filter((_, idx) => idx !== i))
+    setUploadedPreviews(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  async function handleAnalyze() {
+    if (!text.trim() && uploadedFiles.length === 0) return
+
+    if (uploadedFiles.length > 0) {
+      // Convert images to base64 and hand off via sessionStorage
+      const images = await Promise.all(
+        uploadedFiles.map(file => new Promise<{ data: string; mimeType: string; name: string }>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const r = reader.result as string
+            resolve({ data: r.split(',')[1], mimeType: file.type || 'image/jpeg', name: file.name })
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        }))
+      )
+      sessionStorage.setItem('pending_hero_analysis', JSON.stringify({ text: text.trim(), images }))
+      router.push('/buyer')
+    } else {
+      router.push(`/buyer?recheck=${encodeURIComponent(text.trim())}`)
+    }
   }
 
   function loadSample(sample: typeof SAMPLES[0]) {
@@ -55,6 +91,7 @@ export default function HeroSection() {
   }
 
   const live = LIVE_FEED[feedIdx]
+  const canAnalyze = text.trim().length > 0 || uploadedFiles.length > 0
 
   return (
     <section className="relative overflow-hidden max-w-2xl mx-auto px-4 pt-12 pb-10 text-center">
@@ -98,7 +135,7 @@ export default function HeroSection() {
         Check muna<br />bago bayad.
       </h1>
       <p className="text-base text-white/50 max-w-sm mx-auto leading-relaxed mb-2">
-        I-paste ang kahina-hinalang message, link, o account number — makuha ang resulta in seconds.
+        I-paste ang kahina-hinalang message, link, o account number — o mag-upload ng screenshot.
       </p>
       <p className="text-sm text-white/30 font-mono mb-6">
         <span className="text-brand-green font-bold text-lg tabular-nums">{count.toLocaleString()}</span>
@@ -120,8 +157,58 @@ export default function HeroSection() {
 
         <div className="border-t border-ink/8 mx-4" />
 
+        {/* Upload row */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf"
+          multiple
+          className="hidden"
+          onChange={handleFilesSelected}
+        />
+        <div className="px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 text-sm font-medium text-ink-3 hover:text-ink transition-colors"
+          >
+            <ImagePlus size={16} className="text-brand-green" />
+            {uploadedFiles.length === 0
+              ? 'Add screenshots'
+              : `${uploadedFiles.length} screenshot${uploadedFiles.length > 1 ? 's' : ''} added`}
+          </button>
+          <div className="flex items-center gap-1.5">
+            <Lock size={11} className="text-ink-3" />
+            <span className="text-xs text-ink-3">No OTPs or PINs</span>
+          </div>
+        </div>
+
+        {/* Uploaded image thumbnails */}
+        {uploadedFiles.length > 0 && (
+          <div className="grid grid-cols-4 gap-2 px-4 pb-3">
+            {uploadedFiles.map((file, i) => (
+              <div key={i} className="relative rounded-xl overflow-hidden border border-line group aspect-square">
+                <img src={uploadedPreviews[i]} alt={file.name} className="w-full h-full object-cover" />
+                <button
+                  onClick={() => removeFile(i)}
+                  className="absolute top-1 right-1 w-5 h-5 bg-ink/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X size={9} />
+                </button>
+              </div>
+            ))}
+            {uploadedFiles.length < 4 && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square rounded-xl border-2 border-dashed border-line flex items-center justify-center hover:border-ink-3 transition-colors"
+              >
+                <ImagePlus size={16} className="text-ink-3" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Sample pills */}
-        <div className="px-4 pt-3 pb-2">
+        <div className="px-4 pt-1 pb-2">
           <p className="text-[10px] font-semibold text-ink-3 uppercase tracking-widest mb-2">Try a sample</p>
           <div className="flex flex-wrap gap-1.5">
             {SAMPLES.map(s => (
@@ -140,7 +227,7 @@ export default function HeroSection() {
         <div className="px-4 pb-4 pt-2">
           <button
             onClick={handleAnalyze}
-            disabled={!text.trim()}
+            disabled={!canAnalyze}
             className="w-full bg-brand-green text-white font-bold text-base py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-35 disabled:cursor-not-allowed shadow-lg shadow-brand-green/30"
           >
             <ShieldCheck size={18} /> Analyze Risk <ArrowRight size={18} />

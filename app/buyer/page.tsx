@@ -116,6 +116,30 @@ export default function BuyerPage() {
     if (recheck) setInput(decodeURIComponent(recheck))
     if (params.get('tab') === 'history') setTab('history')
 
+    // Restore images + text passed from the landing page hero via sessionStorage
+    const pending = sessionStorage.getItem('pending_hero_analysis')
+    if (pending) {
+      sessionStorage.removeItem('pending_hero_analysis')
+      ;(async () => {
+        try {
+          const { text: pendingText, images } = JSON.parse(pending)
+          if (pendingText) setInput(pendingText)
+          if (Array.isArray(images) && images.length > 0) {
+            const files: File[] = []
+            const previews: string[] = []
+            for (const img of images) {
+              const res  = await fetch(`data:${img.mimeType};base64,${img.data}`)
+              const blob = await res.blob()
+              files.push(new File([blob], img.name || 'image.jpg', { type: img.mimeType }))
+              previews.push(URL.createObjectURL(blob))
+            }
+            setUploadedFiles(files)
+            setUploadedPreviews(previews)
+          }
+        } catch { /* ignore */ }
+      })()
+    }
+
     createClient().auth.getUser().then(({ data: { user } }) => {
       setIsAuth(!!user)
       if (user) {
