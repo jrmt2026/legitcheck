@@ -80,6 +80,12 @@ const COLOR_BADGE: Record<string, string> = {
 const COLOR_LABEL: Record<string, string> = {
   green: 'Safe', yellow: 'Low Risk', orange: 'Caution', red: 'High Risk',
 }
+const COLOR_BORDER: Record<string, string> = {
+  green:  'border-l-brand-green',
+  yellow: 'border-l-brand-yellow',
+  orange: 'border-l-[#F97316]',
+  red:    'border-l-brand-red',
+}
 
 export default function BuyerPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -107,6 +113,7 @@ export default function BuyerPage() {
     const recheck = params.get('recheck')
     if (shared)  setInput(shared)
     if (recheck) setInput(decodeURIComponent(recheck))
+    if (params.get('tab') === 'history') setTab('history')
 
     createClient().auth.getUser().then(({ data: { user } }) => setIsAuth(!!user))
   }, [])
@@ -606,7 +613,8 @@ export default function BuyerPage() {
           ) : (
             <div className="space-y-3">
               {history.map(check => (
-                <div key={check.id} className="bg-paper border border-line rounded-2xl overflow-hidden">
+                <Link key={check.id} href={`/result/${check.id}`}
+                  className={`block bg-paper border border-line border-l-4 rounded-2xl overflow-hidden hover:shadow-sm transition-shadow ${COLOR_BORDER[check.color] ?? 'border-l-line'}`}>
                   <div className="flex items-start gap-3 px-4 pt-3.5 pb-3">
                     <span className={`px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 mt-0.5 ${COLOR_BADGE[check.color] ?? 'bg-paper-2 text-ink-2'}`}>
                       {COLOR_LABEL[check.color] ?? check.color}
@@ -617,11 +625,9 @@ export default function BuyerPage() {
                         {new Date(check.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                     </div>
-                    <Link href={`/result/${check.id}`} className="text-ink-3 hover:text-ink transition-colors flex-shrink-0 mt-0.5">
-                      <ArrowRight size={16} />
-                    </Link>
+                    <ArrowRight size={16} className="text-ink-3 flex-shrink-0 mt-0.5" />
                   </div>
-                  <div className="flex border-t border-line divide-x divide-line">
+                  <div className="flex border-t border-line divide-x divide-line" onClick={e => e.preventDefault()}>
                     <Link
                       href={`/result/${check.id}`}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-ink-3 hover:bg-paper-2 hover:text-ink transition-all"
@@ -635,7 +641,7 @@ export default function BuyerPage() {
                       <RotateCcw size={11} /> Recheck
                     </Link>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
