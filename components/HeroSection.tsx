@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { ShieldCheck, ArrowRight, Lock, CheckCircle, Zap, ImagePlus, X } from 'lucide-react'
 
 const LIVE_FEED = [
@@ -21,7 +20,6 @@ const SAMPLES = [
 ]
 
 export default function HeroSection() {
-  const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -66,7 +64,9 @@ export default function HeroSection() {
     if (!text.trim() && uploadedFiles.length === 0) return
 
     if (uploadedFiles.length > 0) {
-      // Convert images to base64 and hand off via sessionStorage
+      // Convert images to base64 and hand off via sessionStorage, then hard-navigate
+      // (window.location instead of router.push prevents the client router from
+      // re-evaluating the / server component which would flash the dashboard redirect)
       const images = await Promise.all(
         uploadedFiles.map(file => new Promise<{ data: string; mimeType: string; name: string }>((resolve, reject) => {
           const reader = new FileReader()
@@ -79,9 +79,9 @@ export default function HeroSection() {
         }))
       )
       sessionStorage.setItem('pending_hero_analysis', JSON.stringify({ text: text.trim(), images }))
-      router.push('/buyer')
+      window.location.href = '/buyer'
     } else {
-      router.push(`/buyer?recheck=${encodeURIComponent(text.trim())}`)
+      window.location.href = `/buyer?recheck=${encodeURIComponent(text.trim())}`
     }
   }
 

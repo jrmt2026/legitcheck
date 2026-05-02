@@ -88,7 +88,8 @@ const COLOR_BORDER: Record<string, string> = {
 }
 
 export default function BuyerPage() {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef      = useRef<HTMLInputElement>(null)
+  const pendingImagesRef  = useRef<Array<{ data: string; mimeType: string }>>([])
 
   const [tab, setTab]                             = useState<Tab>('check')
   const [userInitials, setUserInitials]           = useState('')
@@ -107,6 +108,7 @@ export default function BuyerPage() {
   const [history, setHistory]                     = useState<HistoryCheck[]>([])
   const [loadingHistory, setLoadingHistory]       = useState(false)
   const [isAuth, setIsAuth]                       = useState(false)
+  const [autoAnalyzePending, setAutoAnalyzePending] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -116,28 +118,16 @@ export default function BuyerPage() {
     if (recheck) setInput(decodeURIComponent(recheck))
     if (params.get('tab') === 'history') setTab('history')
 
-    // Restore images + text passed from the landing page hero via sessionStorage
+    // Restore images + text from landing page hero, then auto-trigger analysis
     const pending = sessionStorage.getItem('pending_hero_analysis')
     if (pending) {
       sessionStorage.removeItem('pending_hero_analysis')
-      ;(async () => {
-        try {
-          const { text: pendingText, images } = JSON.parse(pending)
-          if (pendingText) setInput(pendingText)
-          if (Array.isArray(images) && images.length > 0) {
-            const files: File[] = []
-            const previews: string[] = []
-            for (const img of images) {
-              const res  = await fetch(`data:${img.mimeType};base64,${img.data}`)
-              const blob = await res.blob()
-              files.push(new File([blob], img.name || 'image.jpg', { type: img.mimeType }))
-              previews.push(URL.createObjectURL(blob))
-            }
-            setUploadedFiles(files)
-            setUploadedPreviews(previews)
-          }
-        } catch { /* ignore */ }
-      })()
+      try {
+        const { text: pendingText, images } = JSON.parse(pending)
+        if (pendingText) setInput(pendingText)
+        if (Array.isArray(images) && images.length > 0) pendingImagesRef.current = images
+        setAutoAnalyzePending(true)
+      } catch { /* ignore */ }
     }
 
     createClient().auth.getUser().then(({ data: { user } }) => {
@@ -152,6 +142,14 @@ export default function BuyerPage() {
   useEffect(() => {
     if (tab === 'history') loadHistory()
   }, [tab])
+
+  // Auto-trigger analysis when images arrive from the landing page hero
+  useEffect(() => {
+    if (!autoAnalyzePending) return
+    setAutoAnalyzePending(false)
+    handleAnalyze()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoAnalyzePending])
 
   async function handleSignOut() {
     await createClient().auth.signOut()
@@ -207,7 +205,7 @@ export default function BuyerPage() {
   }
 
   async function handleAnalyze() {
-    if (!input.trim() && uploadedFiles.length === 0) return
+    if (!input.trim() && uploadedFiles.length === 0 && pendingImagesRef.current.length === 0) return
 
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
@@ -226,8 +224,15 @@ export default function BuyerPage() {
     let resultTier: 'guest' | 'basic' | 'full' = user ? 'basic' : 'guest'
 
     try {
-      const imageFiles = uploadedFiles.filter(f => f.type.startsWith('image/'))
-      const images = imageFiles.length > 0 ? await Promise.all(imageFiles.map(fileToBase64)) : []
+      // Use pre-converted base64 images from landing page, or convert uploaded files
+      let images: Array<{ data: string; mimeType: string }>
+      if (pendingImagesRef.current.length > 0) {
+        images = pendingImagesRef.current
+        pendingImagesRef.current = []
+      } else {
+        const imageFiles = uploadedFiles.filter(f => f.type.startsWith('image/'))
+        images = imageFiles.length > 0 ? await Promise.all(imageFiles.map(fileToBase64)) : []
+      }
       const reqHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
       if (session?.access_token) reqHeaders['Authorization'] = `Bearer ${session.access_token}`
       const res = await fetch('/api/analyze', {
