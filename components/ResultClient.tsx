@@ -17,6 +17,7 @@ import ReportScamModal from './ReportScamModal'
 import OfficialVerificationCard from './OfficialVerificationCard'
 import ReportingDirectoryCard from './ReportingDirectoryCard'
 import { getVerificationSources, getDirectoryEntries, CATEGORY_TAGS } from '@/lib/officialSources'
+import ShieldCounterModal from './ShieldCounterModal'
 
 interface Props {
   result: DecisionResult
@@ -336,12 +337,34 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
   const [checkedEvidence, setCheckedEvidence]     = useState<Set<number>>(new Set())
   const [showReportFromChecklist, setShowReportFromChecklist] = useState(false)
   const [showBreakdown, setShowBreakdown]         = useState(false)
+  const [showShieldModal, setShowShieldModal]     = useState(false)
+  const [victoryShared, setVictoryShared]         = useState(false)
 
   const trustScore  = 100 - result.score
   const riskLevel   = getRiskLevel(trustScore, result.isHardRed)
   const theme       = RISK_THEMES[riskLevel]
   const isCritical  = riskLevel === 'critical'
   const L           = (obj: { en: string; tl: string }) => obj[lang]
+
+  // Auto-show shield modal for red/yellow results when user is logged in
+  useEffect(() => {
+    if (!isLoggedIn || !userToken) return
+    if (riskLevel === 'critical' || riskLevel === 'high' || riskLevel === 'caution') {
+      const t = setTimeout(() => setShowShieldModal(true), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [])
+
+  async function shareVictory() {
+    const text = `🧠 I caught a scam using LegitCheck PH! Risk Score: ${trustScore}/100 — ${theme.label}. Check yours: legitcheck-ph.vercel.app`
+    if (navigator.share) {
+      try { await navigator.share({ text, title: 'I caught a scam! — LegitCheck PH' }) } catch { /* dismissed */ }
+    } else {
+      await navigator.clipboard.writeText(text)
+      setVictoryShared(true)
+      setTimeout(() => setVictoryShared(false), 2000)
+    }
+  }
 
   const detectedPhones   = extractPhones(inputText)
   const entitySummary    = lang === 'tl' ? (result.aiInsightsTl?.[0] || result.aiInsights?.[0] || '') : (result.aiInsights?.[0] || '')
@@ -976,6 +999,40 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           <p className="text-[11px] text-ink-3 mt-2 opacity-60">Produced by AntLab Academy</p>
         </div>
 
+        {/* Victory Card — for red/critical results only */}
+        {tier === 'full' && (riskLevel === 'critical' || riskLevel === 'high') && (
+          <div className="bg-ink rounded-2xl p-5 space-y-3">
+            <div className="text-center">
+              <p className="text-3xl mb-1">🧠</p>
+              <p className="text-base font-bold text-white">You caught a scam!</p>
+              <p className="text-sm text-white/50 mt-1 leading-relaxed">
+                You checked before paying. That's exactly what LegitCheck PH is for.
+              </p>
+            </div>
+            <div className="bg-white/8 border border-white/15 rounded-xl px-4 py-3 text-center">
+              <p className="text-xs text-white/50 mb-0.5">Share this moment</p>
+              <p className="text-sm text-white/70 font-mono">
+                "Risk Score: {trustScore}/100 — {theme.label}"
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={shareVictory}
+                className="flex items-center justify-center gap-2 py-3 bg-brand-green text-white rounded-xl text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
+              >
+                <Share2 size={14} />
+                {victoryShared ? 'Copied!' : 'Share'}
+              </button>
+              <button
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://legitcheck-ph.vercel.app')}`, '_blank', 'width=600,height=400')}
+                className="flex items-center justify-center gap-2 py-3 bg-[#1877F2] text-white rounded-xl text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
+              >
+                <Share2 size={14} /> Facebook
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="space-y-2.5">
           {tier === 'full' && (
@@ -1036,6 +1093,12 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
           detectedIdentifiers={detectedPhones}
           forceOpen={showReportFromChecklist}
           onClose={() => setShowReportFromChecklist(false)}
+        />
+
+        <ShieldCounterModal
+          isOpen={showShieldModal}
+          onClose={() => setShowShieldModal(false)}
+          userToken={userToken}
         />
 
         <div className="pb-8" />

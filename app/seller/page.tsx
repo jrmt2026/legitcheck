@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Copy, Check, ChevronRight, BadgeCheck, Loader2, ExternalLink, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
+import AccountLookup from '@/components/AccountLookup'
 
 // ── Seller Appeals (existing) ─────────────────────────────────────────────────
 
@@ -52,7 +53,7 @@ const PLATFORM_OPTIONS = ['Facebook', 'Shopee', 'Lazada', 'Instagram', 'TikTok',
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-type Tab = 'appeals' | 'verify'
+type Tab = 'appeals' | 'verify' | 'buyer_check'
 
 export default function SellerPage() {
   const [tab, setTab]           = useState<Tab>('verify')
@@ -196,15 +197,19 @@ export default function SellerPage() {
       {/* Tabs */}
       <div className="border-b border-line bg-paper px-4">
         <div className="flex max-w-lg mx-auto">
-          {(['verify', 'appeals'] as Tab[]).map(t => (
+          {([
+            { id: 'verify',      label: '🏅 Get Verified'  },
+            { id: 'buyer_check', label: '🔍 Check a Buyer' },
+            { id: 'appeals',     label: '🛡 Appeals'       },
+          ] as { id: Tab; label: string }[]).map(t => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === t ? 'border-ink text-ink' : 'border-transparent text-ink-3 hover:text-ink-2'
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
+                tab === t.id ? 'border-ink text-ink' : 'border-transparent text-ink-3 hover:text-ink-2'
               }`}
             >
-              {t === 'verify' ? '🏅 Get Verified' : '🛡 Seller Appeals'}
+              {t.label}
             </button>
           ))}
         </div>
@@ -369,6 +374,25 @@ export default function SellerPage() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── BUYER CHECK TAB ─────────────────────────────────────────── */}
+        {tab === 'buyer_check' && (
+          <div className="space-y-5 animate-slide-up">
+            <div>
+              <h1 className="text-xl font-semibold text-ink">Check a Buyer</h1>
+              <p className="text-sm text-ink-3 mt-1 leading-relaxed">
+                Look up if a buyer's account, phone number, or profile has been reported in our community database.
+              </p>
+            </div>
+            <AccountLookup />
+            <div className="bg-brand-yellow-light border border-brand-yellow/20 rounded-2xl px-4 py-3">
+              <p className="text-xs text-brand-yellow-dark leading-relaxed">
+                <strong>Honest disclaimer:</strong> Our database is community-sourced. A clean result does not guarantee the buyer is trustworthy — they may simply not have been reported yet.
+                Use this as one signal among many, not as a final decision.
+              </p>
+            </div>
           </div>
         )}
 

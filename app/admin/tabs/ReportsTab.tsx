@@ -22,6 +22,7 @@ const STATUS_LABEL: Record<ReportStatus, string> = {
 
 export default function ReportsTab() {
   const [filter, setFilter]         = useState<Filter>('pending')
+  const [catFilter, setCatFilter]   = useState<string>('all')
   const [reports, setReports]       = useState<any[]>([])
   const [counts, setCounts]         = useState<Counts>({ pending: 0, approved: 0, rejected: 0, all: 0 })
   const [loading, setLoading]       = useState(false)
@@ -30,9 +31,11 @@ export default function ReportsTab() {
   const [noteId, setNoteId]         = useState<string | null>(null)
   const [noteText, setNoteText]     = useState('')
 
-  async function load(f: Filter = filter) {
+  async function load(f: Filter = filter, cat: string = catFilter) {
     setLoading(true)
-    const res = await fetch(`/api/admin/scam-reports?status=${f}`)
+    const params = new URLSearchParams({ status: f })
+    if (cat !== 'all') params.set('category', cat)
+    const res = await fetch(`/api/admin/scam-reports?${params}`)
     if (res.status === 403) { toast.error('Access denied'); setLoading(false); return }
     const d = await res.json()
     setReports(d.reports || [])
@@ -65,7 +68,12 @@ export default function ReportsTab() {
 
   function switchFilter(f: Filter) {
     setFilter(f)
-    load(f)
+    load(f, catFilter)
+  }
+
+  function switchCat(cat: string) {
+    setCatFilter(cat)
+    load(filter, cat)
   }
 
   const FILTER_TABS: { id: Filter; label: string; count: number; dot?: string }[] = [
@@ -75,10 +83,31 @@ export default function ReportsTab() {
     { id: 'all',      label: 'All',       count: counts.all },
   ]
 
+  const CAT_FILTERS = [
+    { id: 'all',          label: 'All categories' },
+    { id: 'bad_buyer',    label: '🚩 Bad Buyers' },
+    { id: 'online_seller',label: '🛍️ Sellers' },
+    { id: 'sms_scam',     label: '📱 SMS Scam' },
+    { id: 'investment',   label: '💰 Investment' },
+    { id: 'job_agency',   label: '✈️ Job / OFW' },
+  ]
+
   return (
     <div className="space-y-4">
 
-      {/* Filter tabs */}
+      {/* Category filter */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {CAT_FILTERS.map(c => (
+          <button key={c.id} onClick={() => switchCat(c.id)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              catFilter === c.id ? 'bg-ink text-white border-ink' : 'bg-paper border-line text-ink-3 hover:text-ink'
+            }`}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Status filter tabs */}
       <div className="flex gap-1 bg-paper border border-line rounded-2xl p-1">
         {FILTER_TABS.map(t => (
           <button key={t.id} onClick={() => switchFilter(t.id)}

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ShieldCheck, ShieldAlert, Clock, ExternalLink, BadgeCheck, Building2 } from 'lucide-react'
+import LegitCardCopyButton from '@/components/LegitCardCopyButton'
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -277,6 +278,19 @@ export default async function VerifyPage({ params }: { params: Promise<{ slug: s
             LegitCheck PH does not guarantee transaction outcomes. Always use secure payment channels.
           </p>
         </div>
+
+        {(seller.badge_level === 'id_verified' || seller.badge_level === 'business_verified' || seller.badge_level === 'fully_verified') && (
+          <div className="bg-paper border border-line rounded-2xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-ink-3 uppercase tracking-widest">Your "I&apos;m Legit" Card</p>
+            <p className="text-xs text-ink-3">I-share sa iyong mga buyers sa Viber, Messenger, o chat:</p>
+            <div className="bg-paper-2 border border-line rounded-xl px-3 py-2.5">
+              <pre className="text-xs text-ink-2 whitespace-pre-wrap font-sans leading-relaxed">{
+                `Hi! Verified seller po ako sa LegitCheck PH 🛡️\nI-check ang aking badge: legitcheck-ph.vercel.app/verify/${slug}\n\n"${seller.seller_name}" — ${badge.label}`
+              }</pre>
+            </div>
+            <LegitCardCopyButton text={`Hi! Verified seller po ako sa LegitCheck PH 🛡️\nI-check ang aking badge: legitcheck-ph.vercel.app/verify/${slug}\n\n"${seller.seller_name}" — ${badge.label}`} />
+          </div>
+        )}
 
         <Link href="/buyer"
           className="flex items-center justify-center gap-2 w-full py-3 border border-line bg-paper text-sm text-ink-2 rounded-xl hover:bg-ink hover:text-white hover:border-ink transition-all">

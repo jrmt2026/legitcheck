@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Clock, ChevronRight, Settings, ShieldCheck, Plus, Flag } from 'lucide-react'
+import { Search, Clock, ChevronRight, Settings, ShieldCheck, Plus, Flag, Shield, Brain, BookOpen } from 'lucide-react'
 import SignOutButton from '@/components/SignOutButton'
 import ScamShieldScore from '@/components/ScamShieldScore'
+import IntelCard from '@/components/IntelCard'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -20,7 +21,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, shield_score, checks_total, reports_total, streak_days, badges_earned')
+    .select('*, shield_score, checks_total, reports_total, streak_days, badges_earned, shield_total, scam_iq')
     .eq('id', user.id)
     .single()
 
@@ -164,6 +165,37 @@ export default async function DashboardPage() {
           reportsTotal={profile?.reports_total ?? 0}
         />
 
+        {/* Shield total + Scam IQ — only show if data exists */}
+        {((profile?.shield_total ?? 0) > 0 || (profile?.scam_iq ?? 0) > 0) && (
+          <div className="grid grid-cols-2 gap-3">
+            {(profile?.shield_total ?? 0) > 0 && (
+              <div className="bg-paper border border-line rounded-2xl px-4 py-3.5 flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <Shield size={12} className="text-brand-green" />
+                  <span className="text-xs font-semibold text-ink-3 uppercase tracking-wide">Protected</span>
+                </div>
+                <p className="text-xl font-bold text-ink font-mono">₱{(profile?.shield_total ?? 0).toLocaleString()}</p>
+                <p className="text-xs text-ink-3">Potential scam losses avoided</p>
+              </div>
+            )}
+            {(profile?.scam_iq ?? 0) > 0 && (
+              <div className="bg-paper border border-line rounded-2xl px-4 py-3.5 flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <Brain size={12} className="text-brand-purple" />
+                  <span className="text-xs font-semibold text-ink-3 uppercase tracking-wide">Scam IQ</span>
+                </div>
+                <p className="text-xl font-bold text-ink font-mono">{profile?.scam_iq ?? 0}</p>
+                <p className="text-xs text-ink-3">
+                  <Link href="/quiz" className="text-brand-green hover:underline">Take the quiz →</Link>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Weekly intel card */}
+        <IntelCard />
+
         {/* Main CTA */}
         <Link href="/buyer" className="block bg-ink text-white rounded-2xl p-5 hover:opacity-90 active:scale-[0.98] transition-all group">
           <div className="flex items-center justify-between">
@@ -237,6 +269,16 @@ export default async function DashboardPage() {
               <span className="text-2xl">📚</span>
               <div className="text-sm font-semibold text-ink">Scam library</div>
               <div className="text-xs text-ink-3">Learn what to watch for</div>
+            </Link>
+            <Link href="/quiz" className="flex flex-col gap-1.5 bg-paper border border-line rounded-2xl p-4 hover:border-ink-3 hover:bg-paper-2 transition-all">
+              <span className="text-2xl">🧠</span>
+              <div className="text-sm font-semibold text-ink">Scam IQ Quiz</div>
+              <div className="text-xs text-ink-3">Test your scam awareness</div>
+            </Link>
+            <Link href="/verify-payment" className="flex flex-col gap-1.5 bg-paper border border-line rounded-2xl p-4 hover:border-ink-3 hover:bg-paper-2 transition-all">
+              <span className="text-2xl">💳</span>
+              <div className="text-sm font-semibold text-ink">Verify Receipt</div>
+              <div className="text-xs text-ink-3">Detect fake GCash/Maya proofs</div>
             </Link>
             <Link href="/dashboard/agents" className="flex flex-col gap-1.5 bg-paper border border-line rounded-2xl p-4 hover:border-ink-3 hover:bg-paper-2 transition-all col-span-2">
               <span className="text-2xl">🛡️</span>

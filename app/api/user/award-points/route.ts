@@ -15,12 +15,12 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { categoryId, color } = await req.json()
+  const { categoryId, color, quizScore, quizTotal } = await req.json()
 
   // Fetch current profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('shield_score, checks_total, reports_total, streak_days, last_check_date, badges_earned')
+    .select('shield_score, checks_total, reports_total, streak_days, last_check_date, badges_earned, scam_iq')
     .eq('id', user.id)
     .single()
 
@@ -34,6 +34,15 @@ export async function POST(req: Request) {
   const newBadges    = checkBadgeUnlocks(currentBadges, newTotal, profile.reports_total ?? 0, categoryId ?? '')
   const allBadges    = [...currentBadges, ...newBadges]
 
+  // Scam IQ: +10 per check, +15 bonus for catching a red/critical, +5 per correct quiz answer
+  let iqDelta = 0
+  if (categoryId === 'quiz' && quizScore != null && quizTotal != null) {
+    iqDelta = Math.round(quizScore * 5)
+  } else {
+    iqDelta = color === 'red' ? 15 : 10
+  }
+  const newIq = (profile.scam_iq ?? 0) + iqDelta
+
   await supabase
     .from('profiles')
     .update({
@@ -42,6 +51,7 @@ export async function POST(req: Request) {
       streak_days:     newStreak,
       last_check_date: new Date().toISOString().split('T')[0],
       badges_earned:   allBadges,
+      scam_iq:         newIq,
     })
     .eq('id', user.id)
 
@@ -51,5 +61,6 @@ export async function POST(req: Request) {
     streak:       newStreak,
     pointsEarned: points,
     newBadges,
+    scamIq:       newIq,
   })
 }

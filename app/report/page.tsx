@@ -8,10 +8,11 @@ import toast from 'react-hot-toast'
 type Category =
   | 'online_seller' | 'sms_scam' | 'investment' | 'donation'
   | 'job_agency' | 'website' | 'loan' | 'romance' | 'marketplace'
-  | 'property' | 'other'
+  | 'property' | 'bad_buyer' | 'other'
 
 const CATEGORIES: { id: Category; emoji: string; label: string; desc: string }[] = [
   { id: 'online_seller', emoji: '🛍️', label: 'Online Seller',        desc: 'Facebook, Shopee, or marketplace sellers'  },
+  { id: 'bad_buyer',     emoji: '🚩', label: 'Bad Buyer',             desc: 'Chargeback fraud, fake payment proof, harassment' },
   { id: 'sms_scam',      emoji: '📱', label: 'SMS / Text Scam',      desc: 'Suspicious text messages'                  },
   { id: 'investment',    emoji: '💰', label: 'Investment Scam',       desc: 'Fake high-return investments'              },
   { id: 'donation',      emoji: '❤️', label: 'Fake Donation',         desc: 'Fraudulent charity or relief drives'       },

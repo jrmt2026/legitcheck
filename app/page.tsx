@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -5,9 +6,19 @@ import {
   ShieldCheck, ArrowRight, Search, TrendingUp, Heart,
   Building2, Home, Plane, MessageSquare, Globe, CreditCard,
   HeartHandshake, Flag, BookOpen, Users,
-  Zap, Lock, CheckCircle,
+  Zap, Lock, CheckCircle, Shield,
 } from 'lucide-react'
 import HeroSection from '@/components/HeroSection'
+
+export const metadata: Metadata = {
+  title: 'LegitCheck PH — Legit ba \'to? Check muna bago bayad.',
+  description: 'I-check ang kahina-hinalang message, seller, account number, o payment receipt. Para sa mga bumibili, nagbebenta, at OFW. Libre. Walang kailangan na account.',
+  openGraph: {
+    title: 'LegitCheck PH — Legit ba \'to?',
+    description: 'I-check ang kahina-hinalang message, seller, o payment screenshot bago ka magbayad. Libre.',
+    url: 'https://legitcheck-ph.vercel.app',
+  },
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -55,6 +66,36 @@ export default async function HomePage() {
 
         {/* ── Hero ────────────────────────────────────────────────────────────── */}
         <HeroSection />
+
+        {/* ── 3 Featured actions ──────────────────────────────────────────────── */}
+        <div className="max-w-2xl mx-auto px-4 pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Link href="/buyer" className="group flex flex-col gap-2 bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all active:scale-[0.98]">
+              <span className="text-2xl">🔍</span>
+              <div className="text-sm font-bold text-white">Check a Seller or Message</div>
+              <div className="text-xs text-white/50 leading-snug">Paste any chat, link, or account number</div>
+              <div className="flex items-center gap-1 text-xs text-brand-green font-semibold mt-auto pt-1">
+                Check now <ArrowRight size={11} />
+              </div>
+            </Link>
+            <Link href="/verify-payment" className="group flex flex-col gap-2 bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all active:scale-[0.98]">
+              <span className="text-2xl">💳</span>
+              <div className="text-sm font-bold text-white">Verify a Payment Receipt</div>
+              <div className="text-xs text-white/50 leading-snug">Detect edited GCash, Maya, or bank screenshots</div>
+              <div className="flex items-center gap-1 text-xs text-brand-green font-semibold mt-auto pt-1">
+                Upload receipt <ArrowRight size={11} />
+              </div>
+            </Link>
+            <Link href="/seller" className="group flex flex-col gap-2 bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all active:scale-[0.98]">
+              <span className="text-2xl">🏅</span>
+              <div className="text-sm font-bold text-white">Prove You're a Legit Seller</div>
+              <div className="text-xs text-white/50 leading-snug">Get verified · Share your badge with buyers</div>
+              <div className="flex items-center gap-1 text-xs text-brand-green font-semibold mt-auto pt-1">
+                Get verified <ArrowRight size={11} />
+              </div>
+            </Link>
+          </div>
+        </div>
 
         {/* ── Stats strip ─────────────────────────────────────────────────────── */}
         <div className="border-y border-white/10 bg-white/5 py-4">
@@ -198,22 +239,39 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── For Suppliers & Businesses ──────────────────────────────────────── */}
+        {/* ── For Sellers ────────────────────────────────────────────────────── */}
         <section className="bg-paper py-10 border-t border-line">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="bg-ink/5 border border-line rounded-2xl px-6 py-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-ink/10 border border-line flex items-center justify-center flex-shrink-0">
-                <Building2 size={20} className="text-ink-3" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-ink mb-0.5">For Suppliers and Businesses</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-ink/5 border border-line rounded-2xl px-6 py-6 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-ink/10 border border-line flex items-center justify-center flex-shrink-0">
+                    <Shield size={18} className="text-ink-3" />
+                  </div>
+                  <p className="text-sm font-bold text-ink">Are you a seller?</p>
+                </div>
                 <p className="text-sm text-ink-3 leading-snug">
-                  Need to check buyers, sellers, or suspicious payment accounts?{' '}
-                  Supplier and business access is coming soon.{' '}
-                  <Link href="/auth/company-signup" className="text-ink underline hover:opacity-70 transition-opacity">
-                    Register your business →
-                  </Link>
+                  Get a LegitCheck badge to prove you're real.
+                  Check buyer accounts. Detect fake payment screenshots.
                 </p>
+                <Link href="/seller" className="inline-flex items-center gap-2 text-sm font-semibold text-ink hover:opacity-70 transition-opacity">
+                  Get verified as a seller →
+                </Link>
+              </div>
+              <div className="bg-ink/5 border border-line rounded-2xl px-6 py-6 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-ink/10 border border-line flex items-center justify-center flex-shrink-0">
+                    <Building2 size={18} className="text-ink-3" />
+                  </div>
+                  <p className="text-sm font-bold text-ink">For Businesses</p>
+                </div>
+                <p className="text-sm text-ink-3 leading-snug">
+                  Need to check buyers, sellers, or suspicious payment accounts at scale?
+                  Business access is coming soon.
+                </p>
+                <Link href="/auth/company-signup" className="inline-flex items-center gap-2 text-sm font-semibold text-ink hover:opacity-70 transition-opacity">
+                  Register your business →
+                </Link>
               </div>
             </div>
           </div>
@@ -270,13 +328,16 @@ export default async function HomePage() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-2 mb-3">
             {[
-              { href: '/buyer',     label: 'Check'     },
-              { href: '/report',    label: 'Report'    },
-              { href: '/library',   label: 'Library'   },
-              { href: '/directory', label: 'Directory' },
-              { href: '/sos',       label: 'Scam SOS'  },
-              { href: '/privacy',   label: 'Privacy'   },
-              { href: '/terms',     label: 'Terms'     },
+              { href: '/buyer',          label: 'Check'            },
+              { href: '/verify-payment', label: 'Verify Payment'   },
+              { href: '/seller',         label: 'For Sellers'      },
+              { href: '/quiz',           label: 'Scam IQ Quiz'     },
+              { href: '/report',         label: 'Report'           },
+              { href: '/library',        label: 'Library'          },
+              { href: '/directory',      label: 'Directory'        },
+              { href: '/sos',            label: 'Scam SOS'         },
+              { href: '/privacy',        label: 'Privacy'          },
+              { href: '/terms',          label: 'Terms'            },
             ].map(({ href, label }) => (
               <Link key={href} href={href} className="hover:text-white/60 transition-colors">{label}</Link>
             ))}

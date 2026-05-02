@@ -132,10 +132,10 @@ export default function HeroSection() {
 
       {/* Headline */}
       <h1 className="text-5xl sm:text-6xl font-bold text-white tracking-tight leading-none mb-3">
-        Check muna<br />bago bayad.
+        Legit ba 'to?
       </h1>
       <p className="text-base text-white/50 max-w-sm mx-auto leading-relaxed mb-2">
-        I-paste ang kahina-hinalang message, link, o account number — o mag-upload ng screenshot.
+        Para sa mga bumibili, nagbebenta, at OFW. I-check ang kahina-hinalang message, account, link, o payment screenshot.
       </p>
       <p className="text-sm text-white/30 font-mono mb-6">
         <span className="text-brand-green font-bold text-lg tabular-nums">{count.toLocaleString()}</span>
@@ -230,7 +230,7 @@ export default function HeroSection() {
             disabled={!canAnalyze}
             className="w-full bg-brand-green text-white font-bold text-base py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-35 disabled:cursor-not-allowed shadow-lg shadow-brand-green/30"
           >
-            <ShieldCheck size={18} /> Analyze Risk <ArrowRight size={18} />
+            <ShieldCheck size={18} /> Check It Now — It&apos;s Free <ArrowRight size={18} />
           </button>
           <p className="text-center text-[10px] text-ink-3 mt-2">No account needed · No OTPs or passwords</p>
         </div>
