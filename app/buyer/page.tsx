@@ -272,6 +272,7 @@ export default function BuyerPage() {
     setStep('result')
 
     if (user) {
+      let newCheckId: string | undefined
       try {
         const { data: check } = await supabase.from('checks').insert({
           user_id:     user.id,
@@ -281,7 +282,7 @@ export default function BuyerPage() {
           color:       finalResult.color,
           result:      finalResult,
         }).select('id').single()
-        if (check) setSavedCheckId(check.id)
+        if (check) { setSavedCheckId(check.id); newCheckId = check.id }
       } catch { /* silent — result already shown */ }
 
       // Award points + badges (non-blocking)
@@ -292,7 +293,7 @@ export default function BuyerPage() {
           const res = await fetch('/api/user/award-points', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body:    JSON.stringify({ categoryId: finalResult.categoryId, color: finalResult.color, checkId: check?.id }),
+            body:    JSON.stringify({ categoryId: finalResult.categoryId, color: finalResult.color, checkId: newCheckId }),
           })
           if (res.ok) {
             const gam = await res.json()
