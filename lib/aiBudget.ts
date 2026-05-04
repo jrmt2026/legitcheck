@@ -42,9 +42,9 @@ export async function getAiBudgetStatus(date?: string): Promise<DailyBudgetStatu
 
   return {
     date:             d,
-    analyzeCalls:     usage?.analyze_calls  ?? 0,
-    verifyCalls:      usage?.verify_calls   ?? 0,
-    agentCalls:       usage?.agent_calls    ?? 0,
+    analyzeCalls:     usage?.scan_calls   ?? 0,
+    verifyCalls:      usage?.verify_calls ?? 0,
+    agentCalls:       usage?.chat_calls   ?? 0,
     estimatedCostUsd,
     dailyLimitUsd,
     percentUsed:      dailyLimitUsd > 0 ? (estimatedCostUsd / dailyLimitUsd) * 100 : 0,
@@ -75,9 +75,9 @@ export async function checkBudgetAndRecord(type: AiCallType): Promise<boolean> {
       await serviceClient
         .from('ai_usage_daily')
         .update({
-          analyze_calls:      type === 'analyze' ? (usage.analyze_calls ?? 0) + 1 : (usage.analyze_calls ?? 0),
-          verify_calls:       type === 'verify'  ? (usage.verify_calls  ?? 0) + 1 : (usage.verify_calls  ?? 0),
-          agent_calls:        type === 'agent'   ? (usage.agent_calls   ?? 0) + 1 : (usage.agent_calls   ?? 0),
+          scan_calls:         type === 'analyze' ? (usage.scan_calls   ?? 0) + 1 : (usage.scan_calls   ?? 0),
+          verify_calls:       type === 'verify'  ? (usage.verify_calls ?? 0) + 1 : (usage.verify_calls ?? 0),
+          chat_calls:         type === 'agent'   ? (usage.chat_calls   ?? 0) + 1 : (usage.chat_calls   ?? 0),
           estimated_cost_usd: currentCost + cost,
           updated_at:         new Date().toISOString(),
         })
@@ -85,9 +85,9 @@ export async function checkBudgetAndRecord(type: AiCallType): Promise<boolean> {
     } else {
       await serviceClient.from('ai_usage_daily').insert({
         usage_date:         today,
-        analyze_calls:      type === 'analyze' ? 1 : 0,
+        scan_calls:         type === 'analyze' ? 1 : 0,
         verify_calls:       type === 'verify'  ? 1 : 0,
-        agent_calls:        type === 'agent'   ? 1 : 0,
+        chat_calls:         type === 'agent'   ? 1 : 0,
         estimated_cost_usd: cost,
       })
     }
