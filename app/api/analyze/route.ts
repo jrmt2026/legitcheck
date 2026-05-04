@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
 import { detectSignals, computeRisk, detectCategory, SIGNALS } from '@/lib/decisionEngine'
+import { checkBudgetAndRecord } from '@/lib/aiBudget'
 import type { RiskColor, CategoryId, RiskLevelLabel } from '@/types'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -319,6 +320,9 @@ export async function POST(req: Request) {
     : ''
 
   // ── 6. Claude deep analysis — PRIMARY VERDICT ─────────────────────────────────
+  // Check daily AI budget before firing the Claude call
+  const budgetAllowed = await checkBudgetAndRecord('analyze')
+
   let trustScore = 50   // neutral default if Claude fails
   let verdictColor: RiskColor = 'yellow'
   let aiInsights: string[] = []
@@ -466,6 +470,21 @@ DO NOT FLAG AS RED FLAGS:
 ${hasImages ? 'IMAGES ATTACHED — analyze visually: check for edited amounts, fake payment screenshots (wrong fonts, cut-off bank logos, impossible balances), stock profile photos used as seller photo, suspicious document formatting.' : ''}
 ${hasSearchResults ? 'WEB SEARCH RESULTS ATTACHED — if results show news articles, scam reports, or warnings about this entity/link/number, treat this as strong corroborating evidence. If results confirm legitimacy (official news, gov announcements), note as positive.' : ''}
 ${scamDbContext ? 'SCAM DATABASE MATCH — this identifier has been reported as a scammer by previous LegitCheck users. This is critical corroborating evidence.' : ''}`
+
+  if (!budgetAllowed) {
+    // Daily AI limit reached — fall back to keyword engine silently
+    const catIdFb  = detectCategory(textForKeywords)
+    const sigIdsFb = detectSignals(textForKeywords, catIdFb)
+    const fallback = computeRisk(catIdFb, sigIdsFb)
+    return NextResponse.json({
+      result: { ...fallback, aiInsights: ['AI analysis paused — daily limit reached. Keyword analysis only.'] },
+      extractedText: analysisText,
+      trustScore: 100 - fallback.score,
+      scoreSteps: [{ label: 'Keyword detection only (AI budget limit reached)', delta: 0 }],
+      tier,
+      aiThrottled: true,
+    })
+  }
 
   try {
     // Build message: images first, then text context

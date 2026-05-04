@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkBudgetAndRecord } from '@/lib/aiBudget'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -86,6 +87,15 @@ VERDICT DEFINITIONS:
 - "suspicious": Some inconsistencies present but not conclusive
 - "likely_fake": Clear forensic evidence of fabrication or editing
 - "inconclusive": Image quality or cropping prevents proper assessment`
+
+  const budgetAllowed = await checkBudgetAndRecord('verify')
+  if (!budgetAllowed) {
+    return NextResponse.json({
+      verdict: 'inconclusive', confidence: 0, flags: [],
+      summary: 'AI analysis paused for today — daily limit reached. Try again tomorrow.',
+      summaryTl: 'Naka-pause ang AI analysis ngayon. Subukan bukas.',
+    })
+  }
 
   try {
     const resp = await anthropic.messages.create({
