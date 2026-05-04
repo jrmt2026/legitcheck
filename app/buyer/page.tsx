@@ -340,6 +340,7 @@ export default function BuyerPage() {
 
   // ── Analyzing screen ───────────────────────────────────────────────────────
   if (step === 'analyzing') {
+    const scanProgress = scanDone ? 100 : Math.max(10, Math.round(Math.min(90, (scanStep / SCAN_STEPS.length) * 100)))
     return (
       <div className="min-h-screen bg-ink flex flex-col">
         <header className="px-4 py-4">
@@ -378,9 +379,17 @@ export default function BuyerPage() {
                   <ShieldCheck size={34} className="text-brand-green animate-float" />
                 </div>
               </div>
-              <div className="text-center">
-                <p className="text-xl font-bold text-white mb-2 tracking-tight">Scanning for scam signals…</p>
-                <p className="text-sm text-white/40 max-w-xs leading-relaxed">Analyzing patterns, links, and report history. Usually under 10 seconds.</p>
+              <div className="text-center space-y-3">
+                <p className="text-xl font-bold text-white tracking-tight">Scanning for scam signals…</p>
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-5xl font-bold text-white font-mono tabular-nums leading-none">{scanProgress}%</p>
+                  <div className="w-48 h-1 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-brand-green rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${scanProgress}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             </>
           )}

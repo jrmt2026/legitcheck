@@ -460,7 +460,7 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
       </header>
 
       {/* ── Hero verdict section ───────────────────────────────────────────── */}
-      <div className={`${theme.bg} px-4 py-10 text-center animate-fade-in ${isCritical ? 'animate-glow' : ''}`}>
+      <div className={`${theme.bg} px-4 py-10 text-center animate-color-reveal ${isCritical ? 'animate-glow' : ''}`}>
         <div className="max-w-lg mx-auto">
 
           {/* Check complete status */}
