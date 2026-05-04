@@ -32,7 +32,7 @@ export async function getAiBudgetStatus(date?: string): Promise<DailyBudgetStatu
   const d = date ?? new Date().toISOString().split('T')[0]
 
   const [usageResult, configResult] = await Promise.all([
-    serviceClient.from('ai_usage_daily').select('*').eq('date', d).single(),
+    serviceClient.from('ai_usage_daily').select('*').eq('usage_date', d).single(),
     serviceClient.from('ai_budget_config').select('daily_limit_usd').eq('id', 1).single(),
   ])
 
@@ -60,7 +60,7 @@ export async function checkBudgetAndRecord(type: AiCallType): Promise<boolean> {
 
   try {
     const [usageResult, configResult] = await Promise.all([
-      serviceClient.from('ai_usage_daily').select('*').eq('date', today).single(),
+      serviceClient.from('ai_usage_daily').select('*').eq('usage_date', today).single(),
       serviceClient.from('ai_budget_config').select('daily_limit_usd').eq('id', 1).single(),
     ])
 
@@ -81,10 +81,10 @@ export async function checkBudgetAndRecord(type: AiCallType): Promise<boolean> {
           estimated_cost_usd: currentCost + cost,
           updated_at:         new Date().toISOString(),
         })
-        .eq('date', today)
+        .eq('usage_date', today)
     } else {
       await serviceClient.from('ai_usage_daily').insert({
-        date:               today,
+        usage_date:         today,
         analyze_calls:      type === 'analyze' ? 1 : 0,
         verify_calls:       type === 'verify'  ? 1 : 0,
         agent_calls:        type === 'agent'   ? 1 : 0,
