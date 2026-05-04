@@ -59,7 +59,7 @@ function fileToBase64(file: File): Promise<{ data: string; mimeType: string }> {
   })
 }
 
-type Step = 'input' | 'analyzing' | 'result'
+type Step = 'input' | 'analyzing' | 'result' | 'signup_gate'
 type Tab  = 'check' | 'history'
 
 interface HistoryCheck {
@@ -109,6 +109,7 @@ export default function BuyerPage() {
   const [loadingHistory, setLoadingHistory]       = useState(false)
   const [isAuth, setIsAuth]                       = useState(false)
   const [autoAnalyzePending, setAutoAnalyzePending] = useState(false)
+  const [longInput, setLongInput]                   = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -177,7 +178,21 @@ export default function BuyerPage() {
   function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    const toAdd = files.slice(0, 4 - uploadedFiles.length)
+    const VALID_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
+    const MAX_BYTES   = 10 * 1024 * 1024
+    const valid = files.filter(f => {
+      if (!VALID_TYPES.includes(f.type) && !/\.(jpe?g|png|webp|gif|pdf)$/i.test(f.name)) {
+        setError('Please upload an image file (JPG, PNG, or PDF). / Mag-upload ng image file (JPG, PNG, o PDF).')
+        return false
+      }
+      if (f.size > MAX_BYTES) {
+        setError('File too large. Maximum size is 10MB. / Masyadong malaki ang file. Maximum ay 10MB.')
+        return false
+      }
+      return true
+    })
+    if (!valid.length) { e.target.value = ''; return }
+    const toAdd = valid.slice(0, 4 - uploadedFiles.length)
     setUploadedFiles(prev => [...prev, ...toAdd])
     setUploadedPreviews(prev => [...prev, ...toAdd.map(f => URL.createObjectURL(f))])
     e.target.value = ''
@@ -205,7 +220,10 @@ export default function BuyerPage() {
   }
 
   async function handleAnalyze() {
-    if (!input.trim() && uploadedFiles.length === 0 && pendingImagesRef.current.length === 0) return
+    if (!input.trim() && uploadedFiles.length === 0 && pendingImagesRef.current.length === 0) {
+      setError('Please paste something to check first. / Mag-paste muna ng isang bagay bago i-check.')
+      return
+    }
 
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
@@ -235,11 +253,20 @@ export default function BuyerPage() {
       }
       const reqHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
       if (session?.access_token) reqHeaders['Authorization'] = `Bearer ${session.access_token}`
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: reqHeaders,
-        body: JSON.stringify({ text: input, images, categoryHint: selectedCategory }),
-      })
+
+      let res: Response
+      try {
+        res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: reqHeaders,
+          body: JSON.stringify({ text: input.slice(0, 8000), images, categoryHint: selectedCategory }),
+        })
+      } catch {
+        setError('Connection lost. Please check your internet and try again. / Nawala ang koneksyon. I-check ang internet at subukan ulit.')
+        setStep('input')
+        return
+      }
+
       const data = await res.json()
       if (res.ok) {
         finalResult    = data.result
@@ -247,9 +274,12 @@ export default function BuyerPage() {
         if (data.scoreSteps) setScoreSteps(data.scoreSteps)
         if (data.tier) resultTier = data.tier as 'guest' | 'basic' | 'full'
         if (data.aiInsightsTl && finalResult) finalResult.aiInsightsTl = data.aiInsightsTl
-        // limitReached: tier is already 'basic', PaywallUpgrade shows automatically
+      } else if (!user && data?.limitReached) {
+        // Guest hit 1-check limit — show signup prompt, skip local engine
+        setStep('signup_gate')
+        return
       }
-      // status 429 = anonymous limit → finalResult stays null → local keyword engine + guest tier below
+      // Other non-ok (budget throttled etc.) → fall through to local engine
     } catch { /* fall through to local engine */ }
 
     if (!finalResult) {
@@ -315,6 +345,40 @@ export default function BuyerPage() {
         }
       } catch { /* silent */ }
     }
+  }
+
+  // ── Guest limit screen ─────────────────────────────────────────────────────
+  if (step === 'signup_gate') {
+    return (
+      <div className="min-h-screen bg-ink flex flex-col">
+        <header className="px-4 py-4">
+          <Link href="/" className="text-lg font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
+            LegitCheck <span className="font-light opacity-50">PH</span>
+          </Link>
+        </header>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6 animate-fade-in">
+          <div className="w-16 h-16 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center">
+            <ShieldCheck size={28} className="text-brand-green" />
+          </div>
+          <div className="text-center space-y-2 max-w-xs">
+            <p className="text-xl font-bold text-white">You've used your free check.</p>
+            <p className="text-sm text-white/60 leading-relaxed">Sign up free to get 3 checks per month.</p>
+            <p className="text-xs text-white/30 mt-1">Nagamit mo na ang iyong libreng check. Mag-sign up para makakuha ng 3 checks bawat buwan.</p>
+          </div>
+          <div className="w-full max-w-xs space-y-2">
+            <Link href="/auth/signup" className="w-full bg-brand-green text-white font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity text-sm">
+              <ShieldCheck size={14} /> Sign up — it's free
+            </Link>
+            <Link href="/auth/login" className="w-full bg-white/8 text-white/70 font-medium rounded-xl py-3 flex items-center justify-center hover:bg-white/15 transition-all text-sm">
+              Log in
+            </Link>
+            <button onClick={reset} className="w-full text-sm text-white/30 hover:text-white/60 transition-colors py-2">
+              ← Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // ── Result screen ──────────────────────────────────────────────────────────
@@ -492,11 +556,16 @@ export default function BuyerPage() {
             {/* Textarea */}
             <textarea
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={e => { setInput(e.target.value); setLongInput(e.target.value.length > 2000) }}
               placeholder="I-paste dito ang message, URL, number, profile link, o kahit anong kahina-hinala.&#10;&#10;Examples: suspicious SMS · seller profile · investment offer · website link · job offer"
               rows={7}
               className="w-full px-5 pt-5 pb-3 text-base text-ink bg-transparent focus:outline-none placeholder-ink-3 resize-none leading-relaxed"
             />
+            {longInput && (
+              <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-brand-yellow-light border border-brand-yellow/30 text-xs text-brand-yellow-dark">
+                Long input detected. Analysis may take a few extra seconds. / Mahabang input. Maaaring tumagal ng ilang segundo ang pagsusuri.
+              </div>
+            )}
 
             {/* Divider */}
             <div className="border-t border-ink/8 mx-4" />
