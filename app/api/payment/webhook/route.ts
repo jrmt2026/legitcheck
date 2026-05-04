@@ -16,7 +16,11 @@ const PLAN_CREDITS: Record<string, number> = {
 
 function verifyPayMongoSignature(rawBody: string, sigHeader: string | null): boolean {
   const secret = process.env.PAYMONGO_WEBHOOK_SECRET
-  if (!secret || !sigHeader) return !secret // if no secret configured, allow all (dev mode)
+  if (!secret) {
+    console.error('CRITICAL: PAYMONGO_WEBHOOK_SECRET is not set — rejecting all webhook requests')
+    return false
+  }
+  if (!sigHeader) return false
   // PayMongo sig header format: "t=<timestamp>,te=<hmac>,li=<hmac>"
   const parts = Object.fromEntries(sigHeader.split(',').map(p => p.split('=')))
   const timestamp = parts['t']

@@ -21,15 +21,10 @@ export async function POST(req: Request) {
 
   if (!check) return NextResponse.json({ error: 'Check not found' }, { status: 404 })
 
-  const amountNum = parseInt(amount) || 0
-  const isFree = amountNum <= 1000
-
-  // Check if paid unlock required
-  if (!isFree) {
-    // TODO: verify payment before proceeding
-    // For now, flag it — frontend enforces the paywall
-    // In production: check if user has active Full Check plan or credit
-  }
+  // isFree is determined server-side by credit balance, not by client-supplied amount
+  const { data: premiumCredits } = await supabase
+    .rpc('get_premium_credits', { p_user_id: user.id })
+  const isFree = (premiumCredits ?? 0) === 0
 
   // Check if share link already exists for this check
   const { data: existing } = await supabase

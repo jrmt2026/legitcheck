@@ -32,11 +32,16 @@ export async function POST(req: Request) {
     if (user) userId = user.id
   }
 
+  // Strip HTML tags before storing to prevent stored XSS in admin panel
+  const safeComment = user_comment
+    ? user_comment.replace(/<[^>]*>/g, '').replace(/[<>]/g, '').slice(0, 500).trim() || null
+    : null
+
   const { error } = await supabase.from('feedback').insert({
     check_id,
     user_id: userId,
     feedback_type,
-    user_comment: user_comment?.slice(0, 500) || null,
+    user_comment: safeComment,
   })
 
   if (error) {

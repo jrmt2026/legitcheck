@@ -21,16 +21,28 @@ function toValidMediaType(mimeType: string): ValidMediaType {
 export const maxDuration = 30
 
 export async function POST(req: Request) {
-  const { image, platform } = await req.json()
-  if (!image?.data) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
-
+  // Auth required — unauthenticated calls would allow unlimited free Anthropic usage
   const authHeader = req.headers.get('authorization')
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-  let userId: string | null = null
-  if (token) {
-    const { data: { user } } = await supabase.auth.getUser(token)
-    if (user) userId = user.id
+  if (!token) return NextResponse.json({ error: 'Login required' }, { status: 401 })
+
+  const { data: { user } } = await supabase.auth.getUser(token)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = user.id
+
+  // Rate limit: max 10 verifications per user per hour
+  const { count } = await supabase
+    .from('payment_verifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', new Date(Date.now() - 3_600_000).toISOString())
+
+  if ((count ?? 0) >= 10) {
+    return NextResponse.json({ error: 'Rate limit: max 10 verifications per hour' }, { status: 429 })
   }
+
+  const { image, platform } = await req.json()
+  if (!image?.data) return NextResponse.json({ error: 'No image provided' }, { status: 400 })
 
   const platformGuides: Record<string, string> = {
     gcash: 'GCash: green color scheme, sender/receiver names, reference number starts with a letter, amount in ₱, date/time stamp, balance shown after deduction.',

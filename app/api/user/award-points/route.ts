@@ -15,7 +15,20 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { categoryId, color, quizScore, quizTotal } = await req.json()
+  const { categoryId, color, quizScore, quizTotal, checkId } = await req.json()
+
+  // Require a checkId for non-quiz calls and verify ownership to prevent replay abuse
+  if (categoryId !== 'quiz') {
+    if (!checkId) return NextResponse.json({ error: 'checkId required' }, { status: 400 })
+    const { data: checkRow } = await supabase
+      .from('checks')
+      .select('id, points_awarded')
+      .eq('id', checkId)
+      .eq('user_id', user.id)
+      .single()
+    if (!checkRow) return NextResponse.json({ error: 'Check not found' }, { status: 404 })
+    if (checkRow.points_awarded) return NextResponse.json({ alreadyAwarded: true }, { status: 200 })
+  }
 
   // Fetch current profile
   const { data: profile } = await supabase
@@ -54,6 +67,11 @@ export async function POST(req: Request) {
       scam_iq:         newIq,
     })
     .eq('id', user.id)
+
+  // Mark the check so points can't be awarded again
+  if (categoryId !== 'quiz' && checkId) {
+    await supabase.from('checks').update({ points_awarded: true }).eq('id', checkId)
+  }
 
   return NextResponse.json({
     shieldScore:  newScore,

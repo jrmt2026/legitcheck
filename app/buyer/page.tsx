@@ -292,7 +292,7 @@ export default function BuyerPage() {
           const res = await fetch('/api/user/award-points', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body:    JSON.stringify({ categoryId: finalResult.categoryId, color: finalResult.color }),
+            body:    JSON.stringify({ categoryId: finalResult.categoryId, color: finalResult.color, checkId: check?.id }),
           })
           if (res.ok) {
             const gam = await res.json()

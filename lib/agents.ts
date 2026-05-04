@@ -63,7 +63,6 @@ export async function callAgent(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       agentRole,
-      systemPrompt: agent.systemPrompt,
       messages: [
         ...conversationHistory,
         { role: 'user', content: userMessage },

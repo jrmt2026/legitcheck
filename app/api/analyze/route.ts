@@ -46,7 +46,19 @@ function stripHtml(html: string): string {
     .replace(/\s{2,}/g, ' ').trim()
 }
 
+function isAllowedUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    if (!['http:', 'https:'].includes(u.protocol)) return false
+    const h = u.hostname.toLowerCase()
+    // Block SSRF targets: localhost, private ranges, cloud metadata
+    const blocked = ['localhost', '127.', '0.0.0.0', '::1', '169.254.', '10.', '192.168.', '172.16.', '172.17.', '172.18.', '172.19.', '172.2', '172.3', 'metadata.google', 'metadata.internal']
+    return !blocked.some(b => h === b || h.startsWith(b))
+  } catch { return false }
+}
+
 async function fetchWebsite(url: string): Promise<{ text: string; isHttps: boolean }> {
+  if (!isAllowedUrl(url)) return { text: '', isHttps: url.startsWith('https://') }
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), 4000)
   try {
