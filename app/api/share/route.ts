@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     token,
     check_id: checkId,
     user_id: user.id,
-    amount: amountNum,
+    amount,
     is_free: isFree,
     expires_at: expiresAt,
   })
