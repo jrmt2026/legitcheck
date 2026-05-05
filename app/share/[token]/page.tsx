@@ -9,10 +9,42 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const supabase = await createClient()
+  const { data: shareLink } = await supabase
+    .from('share_links')
+    .select('checks(score, color, result)')
+    .eq('token', params.token)
+    .single()
+
+  const check   = Array.isArray(shareLink?.checks) ? shareLink.checks[0] : (shareLink?.checks as any)
+  const color   = (check?.color as string) || 'yellow'
+  const score   = check?.score ?? 50
+  const trust   = 100 - score
+  const result  = check?.result as any
+  const headline = (result?.headline?.en as string) || 'Transaction Risk Result'
+
+  const LABELS: Record<string, string> = {
+    green: 'Likely Safe', yellow: 'Needs Verification', orange: 'Suspicious', red: 'High Risk',
+  }
+  const label  = LABELS[color] ?? 'Risk Result'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://legitcheck-ph.vercel.app'
+
   return {
-    title: 'LegitCheck PH — Transaction Risk Result',
-    description: 'A buyer shared a risk check result with you via LegitCheck PH.',
-    robots: 'noindex', // don't index individual share pages
+    title: `${label} (${trust}/100) — LegitCheck PH`,
+    description: `Safety Score: ${trust}/100. ${headline} · Checked with LegitCheck PH before sending money.`,
+    robots: 'noindex',
+    openGraph: {
+      title: `${label} (${trust}/100) — LegitCheck PH`,
+      description: headline,
+      url: `${appUrl}/share/${params.token}`,
+      siteName: 'LegitCheck PH',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${label} (${trust}/100) — LegitCheck PH`,
+      description: headline,
+    },
   }
 }
 
