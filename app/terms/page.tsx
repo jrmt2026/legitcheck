@@ -53,7 +53,19 @@ export default function TermsPage() {
             body: 'We may update these Terms from time to time. Continued use of the service after changes means you accept the updated Terms.',
           },
           {
-            title: '9. Contact',
+            title: '9. Play Fair',
+            body: 'LegitCheck PH is built on community trust. You agree not to: submit false, fabricated, or malicious reports; use reports to harass, intimidate, or retaliate against any person or business; attempt to manipulate community data to harm a competitor; or use this service to coordinate public-shaming campaigns. Confirmed misuse may result in account suspension and report removal. Republic Act No. 10175 (Cybercrime Prevention Act) and Republic Act No. 12010 (Anti-Financial Account Scamming Act) may apply to malicious misuse of this platform.',
+          },
+          {
+            title: '10. Who We Are',
+            body: 'LegitCheck PH is a community anti-scam tool operated by AntLab Academy. We are not a government agency, law enforcement body, bank, or financial regulator. Our findings are risk guidance only — not official determinations of fraud, criminality, or culpability. Any action you take based on our results is your own responsibility.',
+          },
+          {
+            title: '11. What We Are Not For',
+            body: 'LegitCheck PH must not be used: as a substitute for official law enforcement reporting; to publicly accuse, defame, or expose personal information about individuals without evidence; to screen employees, tenants, or borrowers in a way that replaces proper background verification; to facilitate money-mule recruitment or account-takeover operations; or for any purpose that violates Philippine law, including the Data Privacy Act (RA 10173) and the Anti-Financial Account Scamming Act (RA 12010).',
+          },
+          {
+            title: '12. Contact',
             body: 'For questions about these Terms, contact us at support@legitcheck.ph.',
           },
         ].map(({ title, body }) => (

@@ -70,6 +70,9 @@ export default function AccountLookup() {
             Check
           </button>
         </div>
+        <p className="text-xs text-ink-3 mt-2 leading-snug">
+          Results are sourced from community reports reviewed by our team — not a definitive government, bank, or law-enforcement finding.
+        </p>
       </div>
 
       {result && (

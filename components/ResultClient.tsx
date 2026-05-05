@@ -1006,10 +1006,10 @@ export default function ResultClient({ result, checkId, inputText = '', scoreSte
         <div className="border-l-2 border-line pl-3 py-1">
           <p className="text-xs text-ink-3 leading-relaxed">
             {lang === 'tl'
-              ? 'Gabay lang ito. Hindi ito final legal, bank, platform, government, o law-enforcement decision. Mag-verify pa rin bago tumuloy.'
-              : 'This is a guide only. Not a final legal, bank, platform, government, or law-enforcement decision. Verify further before proceeding.'}
+              ? 'Ang LegitCheck PH ay community tool para sa risk guidance — hindi ito opisyal na desisyon ng gobyerno, bangko, o law enforcement. Mag-verify pa rin sa opisyal na mapagkukunan bago tumuloy.'
+              : 'LegitCheck PH provides risk guidance to help you make informed decisions. This is not a government, bank, platform, or law-enforcement determination. Always verify through official channels before sending money.'}
           </p>
-          <p className="text-[11px] text-ink-3 mt-2 opacity-60">Produced by AntLab Academy</p>
+          <p className="text-[11px] text-ink-3 mt-2 opacity-60">Produced by AntLab Academy · Community tool, not an official finding.</p>
         </div>
 
         {/* Victory Card — for red/critical results only */}

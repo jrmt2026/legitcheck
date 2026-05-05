@@ -17,7 +17,7 @@ export async function GET() {
     .from('scam_reports')
     .select('category, platform, description, amount_lost, created_at')
     .gte('created_at', since)
-    .in('status', ['approved', 'accepted'])
+    .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(60)
 

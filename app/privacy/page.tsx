@@ -98,9 +98,34 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-base font-medium text-ink mb-3">6. Data retention</h2>
-            <p className="text-sm leading-relaxed">
-              We keep your account data while your account is active. Check records are retained for 12 months, after which they are automatically deleted. You may request deletion of your data at any time by emailing <a href="mailto:privacy@legitcheck.ph" className="text-brand-blue underline">privacy@legitcheck.ph</a>.
+            <p className="text-sm leading-relaxed mb-3">
+              We keep your account data while your account is active. You may request deletion of your data at any time by emailing <a href="mailto:privacy@legitcheck.ph" className="text-brand-blue underline">privacy@legitcheck.ph</a>.
             </p>
+            <div className="rounded-xl border border-line overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-paper-2">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-ink">Data type</th>
+                    <th className="px-3 py-2 text-left font-semibold text-ink">Retention period</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {[
+                    { type: 'Account info (email, name)', retention: 'Until account deleted' },
+                    { type: 'Check input text', retention: '12 months, then auto-deleted' },
+                    { type: 'Uploaded images / screenshots', retention: 'Not retained — discarded after analysis' },
+                    { type: 'Community reports', retention: 'Retained while relevant; reviewed within 48 h' },
+                    { type: 'Usage logs (anonymous)', retention: '90 days' },
+                    { type: 'IP hash (rate limiting)', retention: '30 days' },
+                  ].map(row => (
+                    <tr key={row.type}>
+                      <td className="px-3 py-2 text-ink-2">{row.type}</td>
+                      <td className="px-3 py-2 text-ink-3">{row.retention}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section>
@@ -156,8 +181,30 @@ export default function PrivacyPage() {
             </div>
           </section>
 
+          <section>
+            <h2 className="text-base font-medium text-ink mb-3">12. Anti-Financial Account Scamming Act (RA 12010)</h2>
+            <p className="text-sm leading-relaxed">
+              LegitCheck PH supports the intent of Republic Act No. 12010 (Anti-Financial Account Scamming Act) by helping Filipinos identify potential financial fraud before it occurs. We provide community-sourced risk signals and AI-assisted pattern detection as a preventive, educational tool.
+            </p>
+            <p className="text-sm leading-relaxed mt-2">
+              We do not have access to your financial accounts, bank transaction records, or payment credentials. We cannot freeze, block, or recover funds. If you believe you are a victim of financial account fraud, contact:
+            </p>
+            <ul className="mt-2 space-y-1">
+              {[
+                'BSP Financial Consumer Protection Department: (02) 8708-7087',
+                'PNP Anti-Cybercrime Group: 0961-348-1524',
+                'NBI Cybercrime Division: (02) 8523-8231',
+              ].map(item => (
+                <li key={item} className="flex items-start gap-2 text-sm text-ink-2">
+                  <span className="w-1 h-1 rounded-full bg-ink-3 flex-shrink-0 mt-2" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+
           <div className="border-t border-line pt-6 text-xs text-ink-3">
-            This privacy policy is governed by Republic Act No. 10173, the Data Privacy Act of 2012 of the Philippines, and its Implementing Rules and Regulations.
+            This privacy policy is governed by Republic Act No. 10173 (Data Privacy Act of 2012) and Republic Act No. 12010 (Anti-Financial Account Scamming Act) of the Philippines, and their Implementing Rules and Regulations.
           </div>
         </div>
       </article>

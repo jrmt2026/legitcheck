@@ -98,7 +98,7 @@ export default function VerifyPaymentPage() {
           </div>
           <h1 className="text-2xl font-bold text-ink tracking-tight">Verify a payment screenshot</h1>
           <p className="text-sm text-ink-3 mt-1 leading-relaxed">
-            Upload a GCash, Maya, or bank receipt. Our AI checks if the amount was edited or fabricated.
+            Upload a payment receipt screenshot. Our AI checks if the amount was edited or fabricated.
           </p>
         </div>
 
@@ -195,10 +195,10 @@ export default function VerifyPaymentPage() {
               </div>
             )}
 
-            <div className="border-t border-line pt-3">
-              <p className="text-xs text-ink-3 leading-relaxed">
-                Forensic guide only. Not a final legal or bank determination.
-                Always verify payment in your own bank app or GCash before releasing goods.
+            <div className="border-t border-line pt-3 flex items-start gap-2">
+              <Shield size={12} className="text-brand-blue flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-brand-blue-dark leading-relaxed">
+                This is a forensic guide to help spot edited receipts — not a legal determination or official bank verification. Always confirm receipt of funds in your own banking or e-wallet app before releasing any goods.
               </p>
             </div>
           </div>

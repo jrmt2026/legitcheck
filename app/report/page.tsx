@@ -50,6 +50,7 @@ export default function ReportPage() {
   const [dateEncountered, setDateEncountered] = useState('')
   const [contactEmail, setContactEmail]       = useState('')
   const [consent, setConsent]                 = useState(false)
+  const [declarationSworn, setDeclarationSworn] = useState(false)
   const [screenshots, setScreenshots]         = useState<File[]>([])
   const [previews, setPreviews]               = useState<string[]>([])
   const [submitting, setSubmitting]           = useState(false)
@@ -69,7 +70,7 @@ export default function ReportPage() {
   }
 
   async function handleSubmit() {
-    if (!category || !description.trim() || !consent) return
+    if (!category || !description.trim() || !consent || !declarationSworn) return
     setSubmitting(true)
     try {
       const res = await fetch('/api/report-scam', {
@@ -79,11 +80,14 @@ export default function ReportPage() {
           category, identifier, platform, description,
           moneySent,
           amountLost: amountLost ? Number(amountLost) : undefined,
-          dateEncountered, contactEmail, consent,
+          dateEncountered, contactEmail, consent, declarationSworn,
         }),
       })
       if (res.ok) {
         setFormStep('done')
+      } else if (res.status === 429) {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data.error || 'Too many reports submitted recently. Please wait before trying again.')
       } else {
         toast.error('Submission failed. Please try again.')
       }
@@ -205,6 +209,13 @@ export default function ReportPage() {
             <div>
               <h1 className="text-2xl font-bold text-ink tracking-tight">What are you reporting?</h1>
               <p className="text-sm text-ink-3 mt-1">Choose the type of scam or suspicious activity.</p>
+            </div>
+
+            <div className="bg-brand-blue-light border border-brand-blue/20 rounded-2xl px-4 py-3 flex items-start gap-3">
+              <Shield size={14} className="text-brand-blue flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-brand-blue-dark leading-snug">
+                Reports are held as <strong>Pending Review</strong> until verified by our team. We never automatically flag anyone. Submitting false or malicious reports is harmful and may violate Philippine law (RA 10175, RA 12010).
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -405,6 +416,18 @@ export default function ReportPage() {
               </p>
             </button>
 
+            <button onClick={() => setDeclarationSworn(v => !v)} className="flex items-start gap-3 w-full text-left group">
+              <div className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                declarationSworn ? 'bg-brand-red border-brand-red' : 'border-line bg-paper-2 group-hover:border-ink-3'
+              }`}>
+                {declarationSworn && <CheckCircle size={12} className="text-white" />}
+              </div>
+              <p className="text-sm text-ink-2 leading-snug">
+                I declare that this report is true and accurate to the best of my knowledge, submitted in good faith to protect others from fraud. I understand that submitting false reports may violate Philippine law (RA 10175, RA 12010).{' '}
+                <span className="text-brand-red">*</span>
+              </p>
+            </button>
+
             <div className="bg-brand-yellow-light border border-brand-yellow/20 rounded-2xl px-4 py-3 flex items-start gap-3">
               <AlertTriangle size={14} className="text-brand-yellow-dark flex-shrink-0 mt-0.5" />
               <p className="text-xs text-brand-yellow-dark leading-snug">
@@ -414,7 +437,7 @@ export default function ReportPage() {
 
             <button
               onClick={handleSubmit}
-              disabled={!consent || submitting}
+              disabled={!consent || !declarationSworn || submitting}
               className="w-full bg-brand-red text-white text-base font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Flag size={16} />
